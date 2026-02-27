@@ -1158,6 +1158,7 @@
     };
 
     const appEl = document.querySelector(".app");
+    const appTitleEl = document.querySelector(".app-title");
     const slideEl = document.getElementById("slide");
     const fileInputEl = document.getElementById("fileInput");
     const trainMapEl = document.getElementById("trainMap");
@@ -1949,6 +1950,9 @@
 
     function renderSlide() {
       if (!state.slides.length) {
+        if (appTitleEl) {
+          appTitleEl.hidden = false;
+        }
         slideEl.innerHTML = `
           <div class="empty">
             <div>
@@ -1983,6 +1987,9 @@
         return;
       }
 
+      if (appTitleEl) {
+        appTitleEl.hidden = true;
+      }
       slideEl.innerHTML = `
         <div class="slide-center">
           <div class="slide-content">${state.slides[state.index].html || "<p></p>"}</div>
