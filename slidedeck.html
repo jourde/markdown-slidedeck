@@ -81,6 +81,26 @@
       font-weight: 800;
     }
 
+    .app-footer {
+      width: min(1280px, 100%);
+      display: flex;
+      justify-content: center;
+      padding: 10px 0 4px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .repo-link {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 0.14em;
+      font-weight: 600;
+    }
+
+    .repo-link:hover {
+      color: var(--accent-hover);
+    }
+
     .upload-cta {
       border: 0;
       border-radius: 999px;
@@ -1073,6 +1093,9 @@
     <input id="fileInput" type="file" accept=".md,.markdown,text/markdown,text/plain" />
     <article id="slide" class="slide" aria-live="polite" aria-atomic="true" role="region" aria-label="Slide content" tabindex="-1"></article>
     <nav id="trainMap" class="train-map" aria-label="Slide train map"></nav>
+    <footer class="app-footer">
+      <a class="repo-link" href="https://github.com/jourde/markdown-html-slidedeck" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+    </footer>
   </main>
   <button id="mapToggle" class="map-toggle" type="button" aria-label="Show or hide route line" title="Show or hide route line" aria-controls="trainMap" aria-expanded="false">
     <span class="material-symbols-outlined" aria-hidden="true">route</span>
@@ -2020,7 +2043,7 @@
         slideEl.innerHTML = `
           <div class="empty">
             <div>
-              <strong>Start by choosing delimiters, then import your Markdown file</strong>
+              <strong>First, choose the slide delimiters used in your Markdown, then import the Markdown file.</strong>
               <div class="empty-flow">
                 <button
                   class="empty-step"
