@@ -1491,6 +1491,34 @@
       user-select: none;
     }
 
+    .qr-code-generated {
+      display: inline-block;
+      padding: 10px;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+      line-height: 0;
+    }
+
+    .qr-code-generated img,
+    .qr-code-generated canvas {
+      display: block;
+    }
+
+    div[data-qr] {
+      display: inline-block;
+      padding: 10px;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+      line-height: 0;
+    }
+
+    div[data-qr] img,
+    div[data-qr] canvas {
+      display: block;
+    }
+
     .embed-warning {
       margin-top: 14px;
       padding: 10px 12px;
@@ -1640,6 +1668,158 @@
       display: none;
     }
 
+    /* ── Split-view editor ─────────────────────────────────────────────── */
+    .split-toggle {
+      position: fixed;
+      right: 16px;
+      bottom: 326px;
+      border: 0;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #2e3c54;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(21, 34, 54, 0.14);
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, color 120ms ease;
+    }
+
+    .split-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(21, 34, 54, 0.18);
+    }
+
+    .split-toggle.active {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .split-toggle:focus-visible {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .split-toggle .material-symbols-outlined {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    #editorPanel {
+      display: none;
+      flex-direction: column;
+      width: 0;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .app.split-view {
+      flex-direction: row;
+      align-items: stretch;
+      padding: clamp(12px, 2vw, 24px);
+      gap: clamp(10px, 1.5vw, 20px);
+    }
+
+    .app.split-view #slide {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .app.split-view #trainMap,
+    .app.split-view #durationBar {
+      display: none !important;
+    }
+
+    .app.split-view #editorPanel {
+      display: flex;
+      width: clamp(280px, 38vw, 560px);
+      flex-shrink: 0;
+    }
+
+    .editor-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px 8px 14px;
+      background: #f2f5fa;
+      border-radius: 10px 10px 0 0;
+      border-bottom: 1px solid #dde4ef;
+      flex-shrink: 0;
+    }
+
+    .editor-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #4f5a6d;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .editor-download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #fff;
+      padding: 5px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 140ms ease;
+    }
+
+    .editor-download-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .editor-download-btn:focus-visible {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .editor-download-btn .material-symbols-outlined {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    #editorTextarea {
+      flex: 1;
+      min-height: 0;
+      resize: none;
+      border: 0;
+      border-radius: 0 0 10px 10px;
+      background: #1e2430;
+      color: #e2e8f0;
+      font-family: "Fira Code", "Cascadia Code", ui-monospace, "SF Mono", Consolas, monospace;
+      font-size: 0.82rem;
+      line-height: 1.65;
+      padding: 14px 16px;
+      outline: none;
+      tab-size: 2;
+      white-space: pre;
+      overflow-wrap: normal;
+      overflow-x: auto;
+    }
+
+    #editorTextarea::placeholder {
+      color: #64748b;
+    }
+
+    .editor-status {
+      font-size: 0.72rem;
+      color: #8595ac;
+      padding: 4px 14px;
+      background: #f2f5fa;
+      border-radius: 0 0 10px 10px;
+      border-top: 1px solid #dde4ef;
+      flex-shrink: 0;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -1692,6 +1872,17 @@
   <main class="app">
     <h1 class="app-title">Markdown Slide Deck</h1>
     <input id="fileInput" type="file" accept=".md,.markdown,text/markdown,text/plain" />
+    <section id="editorPanel" aria-label="Markdown editor">
+      <div class="editor-header">
+        <span class="editor-title">Markdown</span>
+        <button id="editorDownloadBtn" class="editor-download-btn" type="button" aria-label="Download Markdown file">
+          <span class="material-symbols-outlined" aria-hidden="true">download</span>
+          Download .md
+        </button>
+      </div>
+      <textarea id="editorTextarea" spellcheck="false" placeholder="Load a Markdown file to edit it here…"></textarea>
+      <div id="editorStatus" class="editor-status" aria-live="polite"></div>
+    </section>
     <article id="slide" class="slide" aria-live="polite" aria-atomic="true" role="region" aria-label="Slide content" tabindex="-1"></article>
     <nav id="trainMap" class="train-map" aria-label="Slide train map"></nav>
     <div id="durationBar" class="duration-bar" hidden></div>
@@ -1750,6 +1941,9 @@
   </button>
   <button id="searchToggle" class="search-toggle" type="button" aria-label="Search slides" title="Search slides" aria-controls="searchPanel" aria-expanded="false">
     <span class="material-symbols-outlined" aria-hidden="true">search</span>
+  </button>
+  <button id="splitToggle" class="split-toggle" type="button" aria-label="Toggle split editor" title="Toggle split editor" aria-pressed="false">
+    <span class="material-symbols-outlined" aria-hidden="true">vertical_split</span>
   </button>
   <button id="exportToggle" class="export-toggle" type="button" aria-label="Export as HTML" title="Export as HTML" hidden>
     <span class="material-symbols-outlined" aria-hidden="true">download</span>
@@ -1810,6 +2004,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,600,0,0" />
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
   <script>
@@ -1928,7 +2123,8 @@
         gfm: true,
         breaks: false,
         headerIds: false,
-        mangle: false
+        mangle: false,
+        html: true
       });
     }
 
@@ -2972,6 +3168,68 @@
       }
     }
 
+    function executeInlineScripts() {
+      const contentRoot = slideEl.querySelector(".slide-content");
+      if (!contentRoot) {
+        return;
+      }
+      Array.from(contentRoot.querySelectorAll("script")).forEach((oldScript) => {
+        const src = oldScript.getAttribute("src");
+        // Skip re-fetching QRCode.js CDN if already loaded
+        if (src && src.includes("qrcode") && typeof window.QRCode === "function") {
+          oldScript.remove();
+          return;
+        }
+        const newScript = document.createElement("script");
+        Array.from(oldScript.attributes).forEach((attr) => {
+          newScript.setAttribute(attr.name, attr.value);
+        });
+        newScript.textContent = oldScript.textContent;
+        oldScript.replaceWith(newScript);
+      });
+    }
+
+    function renderQRCodes() {
+      const contentRoot = slideEl.querySelector(".slide-content");
+      if (!contentRoot || typeof window.QRCode !== "function") {
+        return;
+      }
+
+      // ![qr](https://url) or ![qr 200](https://url) syntax
+      contentRoot.querySelectorAll('img[alt^="qr" i]').forEach((img) => {
+        const url = img.getAttribute("src");
+        if (!url) {
+          return;
+        }
+        const sizeMatch = (img.getAttribute("alt") || "").match(/\d+/);
+        const size = sizeMatch ? parseInt(sizeMatch[0], 10) : (parseInt(img.getAttribute("width") || "0", 10) || 200);
+        const wrapper = document.createElement("div");
+        wrapper.className = "qr-code-generated";
+        img.replaceWith(wrapper);
+        new window.QRCode(wrapper, {
+          text: url,
+          width: size,
+          height: size,
+          correctLevel: window.QRCode.CorrectLevel.H
+        });
+      });
+
+      // <div data-qr="https://url" data-size="200"></div> syntax
+      contentRoot.querySelectorAll("div[data-qr]").forEach((div) => {
+        const url = div.getAttribute("data-qr");
+        if (!url || div.querySelector("canvas, img")) {
+          return;
+        }
+        const size = parseInt(div.getAttribute("data-size") || "200", 10);
+        new window.QRCode(div, {
+          text: url,
+          width: size,
+          height: size,
+          correctLevel: window.QRCode.CorrectLevel.H
+        });
+      });
+    }
+
     function renderSlide() {
       if (!state.slides.length) {
         if (appEl) {
@@ -3040,6 +3298,8 @@
       enhanceTags();
       renderMath();
       renderMermaid();
+      renderQRCodes();
+      executeInlineScripts();
       applySearchHighlights();
       updateSlideAlignment();
       slideEl.scrollTop = 0;
@@ -3255,6 +3515,10 @@
         if (state.search.query.trim()) {
           rebuildSearchResults();
         }
+        if (editorTextareaEl && appEl?.classList.contains("split-view")) {
+          editorTextareaEl.value = text;
+          updateEditorStatus();
+        }
         renderSlide();
       };
       reader.readAsText(file);
@@ -3293,6 +3557,10 @@
         state.slides = parseSlides(text);
         state.index = 0;
         if (state.search.query.trim()) rebuildSearchResults();
+        if (editorTextareaEl && appEl?.classList.contains("split-view")) {
+          editorTextareaEl.value = text;
+          updateEditorStatus();
+        }
         setUrlLoadPanelOpen(false);
         renderSlide();
       } catch (err) {
@@ -3691,6 +3959,67 @@ ${bodyHtml}
     }
 
     exportToggleEl?.addEventListener("click", exportHTML);
+    // ─────────────────────────────────────────────────────────────────────
+
+    // ── Split-view editor ────────────────────────────────────────────────
+    const splitToggleEl    = document.getElementById("splitToggle");
+    const editorPanelEl    = document.getElementById("editorPanel");
+    const editorTextareaEl = document.getElementById("editorTextarea");
+    const editorStatusEl   = document.getElementById("editorStatus");
+    const editorDownloadEl = document.getElementById("editorDownloadBtn");
+
+    function openEditor() {
+      editorTextareaEl.value = state.sourceMarkdown;
+      updateEditorStatus();
+    }
+
+    function updateEditorStatus() {
+      const lines = editorTextareaEl.value.split("\n").length;
+      const chars = editorTextareaEl.value.length;
+      const count = state.slides.length;
+      editorStatusEl.textContent = `${lines} lines · ${chars} chars · ${count} slide${count !== 1 ? "s" : ""}`;
+    }
+
+    function toggleSplitView() {
+      const isActive = appEl.classList.toggle("split-view");
+      splitToggleEl.setAttribute("aria-pressed", String(isActive));
+      splitToggleEl.classList.toggle("active", isActive);
+      if (isActive) {
+        openEditor();
+      }
+    }
+
+    let editorDebounceTimer = null;
+    editorTextareaEl?.addEventListener("input", () => {
+      clearTimeout(editorDebounceTimer);
+      editorDebounceTimer = setTimeout(() => {
+        const text = editorTextareaEl.value;
+        state.sourceMarkdown = text;
+        state.slides = parseSlides(text);
+        state.index = Math.min(state.index, Math.max(0, state.slides.length - 1));
+        renderSlide();
+        updateEditorStatus();
+      }, 400);
+    });
+
+    editorDownloadEl?.addEventListener("click", () => {
+      const text = editorTextareaEl.value || state.sourceMarkdown;
+      if (!text) return;
+      const meta = state.frontmatter || {};
+      const rawTitle = meta.title || "slides";
+      const filename = rawTitle.replace(/[^a-zA-Z0-9_\- ]/g, "_").trim() + ".md";
+      const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    });
+
+    splitToggleEl?.addEventListener("click", toggleSplitView);
     // ─────────────────────────────────────────────────────────────────────
 
     loadSettings();
