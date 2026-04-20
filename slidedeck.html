@@ -329,14 +329,23 @@
     }
 
     .duration-bar-label {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .duration-bar-label-title {
       font-size: 0.68rem;
       font-weight: 600;
       color: #8595ac;
-      width: 28px;
-      text-align: right;
-      flex-shrink: 0;
       letter-spacing: 0.03em;
       text-transform: uppercase;
+    }
+    .duration-bar-label-mins {
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: #8595ac;
     }
 
     .slide-duration-bar-fill {
@@ -3378,12 +3387,19 @@
       durationBarEl.hidden = !showPerSlide && !showGlobal;
       if (!showPerSlide && !showGlobal) return;
 
-      function makeBarRow(label, durationSecs, elapsedSecs) {
+      function makeBarRow(title, durationSecs, elapsedSecs) {
         const row = document.createElement("div");
         row.className = "duration-bar-row";
         const lbl = document.createElement("span");
         lbl.className = "duration-bar-label";
-        lbl.textContent = label;
+        const titleSpan = document.createElement("span");
+        titleSpan.className = "duration-bar-label-title";
+        titleSpan.textContent = title;
+        const minsSpan = document.createElement("span");
+        minsSpan.className = "duration-bar-label-mins";
+        minsSpan.textContent = `${Math.round(durationSecs / 60)} min.`;
+        lbl.appendChild(titleSpan);
+        lbl.appendChild(minsSpan);
         const track = document.createElement("div");
         track.className = "slide-duration-bar-track";
         const fill = document.createElement("div");
