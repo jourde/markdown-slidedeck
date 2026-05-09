@@ -170,7 +170,7 @@
       --station-size: 22px;
       --station-center-y: 22px;
       width: min(1100px, 100%);
-      height: 66px;
+      height: 82px;
       display: none;
       align-items: center;
       justify-content: center;
@@ -203,6 +203,7 @@
       transform: translateY(-50%);
       pointer-events: none;
       z-index: 0;
+      transition: width 320ms cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .station-list {
@@ -266,11 +267,16 @@
       background: #6eaee8;
     }
 
+    @keyframes stationPulse {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(28, 126, 214, 0.18); }
+      50%       { box-shadow: 0 0 0 7px rgba(28, 126, 214, 0.08); }
+    }
+
     .station.active {
       border-color: var(--accent);
       background: var(--accent);
-      box-shadow: 0 0 0 4px rgba(28, 126, 214, 0.17);
       transform: translateY(-1px);
+      animation: stationPulse 2.2s ease-in-out infinite;
     }
 
     .station.active::after {
@@ -293,8 +299,33 @@
       user-select: none;
     }
 
+    .station-label {
+      font-size: 8px;
+      line-height: 1;
+      color: #8595ac;
+      font-weight: 500;
+      max-width: 36px;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      user-select: none;
+    }
+
     .train-map.has-durations {
-      height: 82px;
+      height: 96px;
+    }
+
+    .section-tick {
+      position: absolute;
+      top: calc(var(--station-center-y) - 6px);
+      transform: translateX(-50%) translateY(-50%);
+      width: 2px;
+      height: 12px;
+      background: rgba(28, 126, 214, 0.35);
+      border-radius: 1px;
+      pointer-events: none;
+      z-index: 0;
     }
 
     /* ── Overview mode ─────────────────────────────────────────── */
@@ -424,16 +455,35 @@
       flex-direction: column;
       align-items: center;
       gap: 4px;
-      padding: 6px 8px;
+      padding: 6px 8px 16px;
       border-radius: 10px;
       border: 1px solid transparent;
       min-width: 48px;
+      position: relative;
       transition: border-color 120ms ease, background 120ms ease;
     }
 
     .train-col.active-col {
       background: rgba(28, 126, 214, 0.06);
       border-color: rgba(28, 126, 214, 0.28);
+    }
+
+    .col-progress {
+      position: absolute;
+      bottom: 4px;
+      left: 8px;
+      right: 8px;
+      height: 3px;
+      background: rgba(28, 126, 214, 0.15);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .col-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 999px;
+      transition: width 320ms cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .train-col-header {
@@ -4131,9 +4181,12 @@
           station.classList.add("active");
           station.setAttribute("aria-current", "step");
         }
+        const headingMatch = slide.html.match(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/i);
+        const rawTitle = headingMatch ? decodeHtml(headingMatch[1]) : "";
+        const titleText = rawTitle ? ` – ${rawTitle}` : "";
         const durationLabel = slide.duration != null ? ` (${formatDuration(slide.duration)})` : "";
-        station.setAttribute("aria-label", `Go to slide ${idx + 1}${durationLabel}`);
-        station.title = `Slide ${idx + 1}${durationLabel}`;
+        station.setAttribute("aria-label", `Go to slide ${idx + 1}${titleText}${durationLabel}`);
+        station.title = `Slide ${idx + 1}${titleText}${durationLabel}`;
         station.addEventListener("click", () => {
           state.index = idx;
           syncGridFromIndex();
@@ -4147,6 +4200,14 @@
         step.appendChild(station);
         step.appendChild(num);
 
+        if (rawTitle) {
+          const labelEl = document.createElement("span");
+          labelEl.className = "station-label";
+          const trimmed = rawTitle.slice(0, 10);
+          labelEl.textContent = rawTitle.length > 10 ? trimmed + "…" : trimmed;
+          step.appendChild(labelEl);
+        }
+
         if (slide.duration != null) {
           const dur = document.createElement("span");
           dur.className = "station-duration";
@@ -4158,6 +4219,18 @@
       });
 
       trainMapEl.appendChild(stationList);
+
+      if (state.grid.length > 1) {
+        state.grid.slice(1).forEach(col => {
+          const boundaryIdx = col[0];
+          const ratio = state.slides.length > 1 ? boundaryIdx / (state.slides.length - 1) : 0;
+          const tick = document.createElement("div");
+          tick.className = "section-tick";
+          tick.style.left = `calc(24px + (100% - 48px) * ${ratio})`;
+          trainMapEl.appendChild(tick);
+        });
+      }
+
       updateSlideAlignment();
     }
 
@@ -4199,8 +4272,9 @@
       gridEl.className = "train-grid";
 
       state.grid.forEach((column, colIdx) => {
+        const isActiveCol = colIdx === state.col;
         const colEl = document.createElement("div");
-        colEl.className = "train-col" + (colIdx === state.col ? " active-col" : "");
+        colEl.className = "train-col" + (isActiveCol ? " active-col" : "");
 
         const h1Match = (state.slides[column[0]]?.html || "").match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
         const title = h1Match ? decodeHtml(h1Match[1]) : `Section ${colIdx + 1}`;
@@ -4212,14 +4286,17 @@
 
         column.forEach((flatIdx, rowIdx) => {
           const slide = state.slides[flatIdx];
-          const isActive = colIdx === state.col && rowIdx === state.row;
+          const isActive = isActiveCol && rowIdx === state.row;
           const station = document.createElement("button");
           station.type = "button";
           station.className = "station" + (flatIdx < state.index ? " past" : "") + (isActive ? " active" : "");
           if (isActive) station.setAttribute("aria-current", "step");
+          const slideHeadingMatch = slide.html.match(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/i);
+          const slideTitle = slideHeadingMatch ? decodeHtml(slideHeadingMatch[1]) : "";
+          const slideTitleText = slideTitle ? ` – ${slideTitle}` : "";
           const durLabel = slide.duration != null ? ` (${formatDuration(slide.duration)})` : "";
-          station.setAttribute("aria-label", `Go to ${title}, slide ${rowIdx + 1}${durLabel}`);
-          station.title = `[${colIdx + 1},${rowIdx + 1}]${durLabel}`;
+          station.setAttribute("aria-label", `Go to ${title}, slide ${rowIdx + 1}${slideTitleText}${durLabel}`);
+          station.title = `${title} ${rowIdx + 1}${slideTitleText}${durLabel}`;
           station.addEventListener("click", () => {
             state.col = colIdx;
             state.row = rowIdx;
@@ -4238,6 +4315,17 @@
             colEl.appendChild(dur);
           }
         });
+
+        const progressEl = document.createElement("div");
+        progressEl.className = "col-progress";
+        const fillEl = document.createElement("div");
+        fillEl.className = "col-progress-fill";
+        const rowProgress = isActiveCol
+          ? (column.length > 1 ? state.row / (column.length - 1) : 1)
+          : (column.every(fi => fi < state.index) ? 1 : 0);
+        fillEl.style.width = `${rowProgress * 100}%`;
+        progressEl.appendChild(fillEl);
+        colEl.appendChild(progressEl);
 
         gridEl.appendChild(colEl);
       });
