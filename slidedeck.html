@@ -297,6 +297,164 @@
       height: 82px;
     }
 
+    /* ── Overview mode ─────────────────────────────────────────── */
+    .overview {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(10, 18, 32, 0.95);
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 48px 40px 64px;
+    }
+
+    .overview[hidden] {
+      display: none;
+    }
+
+    .overview-hint {
+      color: rgba(255, 255, 255, 0.35);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+      flex-shrink: 0;
+    }
+
+    .overview-grid {
+      display: flex;
+      flex-direction: row;
+      gap: 28px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .overview-col {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .overview-col-title {
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      max-width: 192px;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .overview-card {
+      width: 192px;
+      height: 128px;
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      background: #fff;
+      transition: border-color 140ms ease, box-shadow 140ms ease;
+      flex-shrink: 0;
+    }
+
+    .overview-card:hover {
+      border-color: rgba(28, 126, 214, 0.7);
+      box-shadow: 0 0 0 3px rgba(28, 126, 214, 0.2);
+    }
+
+    .overview-card.active {
+      border-color: var(--accent, #1c7ed6);
+      box-shadow: 0 0 0 3px rgba(28, 126, 214, 0.35);
+    }
+
+    .overview-card-inner {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 800px;
+      height: 533px;
+      transform: scale(0.24);
+      transform-origin: top left;
+      overflow: hidden;
+      pointer-events: none;
+      padding: 40px 48px;
+      box-sizing: border-box;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .overview-card-num {
+      position: absolute;
+      bottom: 5px;
+      right: 7px;
+      font-size: 9px;
+      color: rgba(0, 0, 0, 0.25);
+      font-weight: 600;
+      pointer-events: none;
+    }
+
+    .train-map.is-2d {
+      height: auto;
+      min-height: 80px;
+      max-height: 160px;
+      overflow-x: auto;
+      align-items: flex-start;
+      justify-content: flex-start;
+      padding: 10px 16px;
+    }
+
+    .train-grid {
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .train-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 8px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      min-width: 48px;
+      transition: border-color 120ms ease, background 120ms ease;
+    }
+
+    .train-col.active-col {
+      background: rgba(28, 126, 214, 0.06);
+      border-color: rgba(28, 126, 214, 0.28);
+    }
+
+    .train-col-header {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: #667287;
+      text-transform: uppercase;
+      text-align: center;
+      max-width: 64px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-bottom: 4px;
+      user-select: none;
+    }
+
+    .train-col.active-col .train-col-header {
+      color: var(--accent);
+    }
+
     .duration-bar {
       width: min(1100px, 100%);
       padding: 4px 24px 8px;
@@ -1116,6 +1274,75 @@
       cursor: not-allowed;
     }
 
+    .vertical-nav {
+      position: fixed;
+      right: 70px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      z-index: 40;
+      pointer-events: none;
+    }
+
+    .vertical-nav[hidden] {
+      display: none;
+    }
+
+    .vn-track {
+      position: absolute;
+      top: 9px;
+      bottom: 9px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      background: rgba(180, 195, 215, 0.45);
+      border-radius: 1px;
+    }
+
+    .vn-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      border-radius: 1px;
+      background: var(--accent, #1c7ed6);
+      transition: height 220ms ease;
+    }
+
+    .vn-dot {
+      position: relative;
+      z-index: 1;
+      appearance: none;
+      padding: 0;
+      width: 10px;
+      height: 10px;
+      min-width: 10px;
+      min-height: 10px;
+      box-sizing: border-box;
+      border-radius: 50%;
+      border: 2px solid rgba(150, 170, 200, 0.6);
+      background: transparent;
+      margin: 5px 0;
+      cursor: pointer;
+      pointer-events: all;
+      transition: background 180ms ease, border-color 180ms ease;
+      flex-shrink: 0;
+      align-self: center;
+    }
+
+    .vn-dot.past {
+      background: rgba(28, 126, 214, 0.35);
+      border-color: rgba(28, 126, 214, 0.4);
+    }
+
+    .vn-dot.active {
+      background: var(--accent, #1c7ed6);
+      border-color: var(--accent, #1c7ed6);
+    }
+
     .search-panel {
       position: fixed;
       right: 68px;
@@ -1721,6 +1948,46 @@
     }
 
     /* ── Split-view editor ─────────────────────────────────────────────── */
+    .overview-toggle {
+      position: fixed;
+      right: 16px;
+      bottom: 378px;
+      z-index: 210;
+      border: 0;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #2e3c54;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(21, 34, 54, 0.14);
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, color 120ms ease;
+    }
+
+    .overview-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(21, 34, 54, 0.18);
+    }
+
+    .overview-toggle:focus-visible {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .overview-toggle .material-symbols-outlined {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .overview-toggle.active {
+      background: var(--accent, #1c7ed6);
+      color: #fff;
+    }
+
     .split-toggle {
       position: fixed;
       right: 16px;
@@ -1994,6 +2261,9 @@
   <button id="searchToggle" class="search-toggle" type="button" aria-label="Search slides" title="Search slides" aria-controls="searchPanel" aria-expanded="false">
     <span class="material-symbols-outlined" aria-hidden="true">search</span>
   </button>
+  <button id="overviewToggle" class="overview-toggle" type="button" aria-label="Show slide overview" title="Show slide overview (O)" aria-pressed="false" hidden>
+    <span class="material-symbols-outlined" aria-hidden="true">grid_view</span>
+  </button>
   <button id="splitToggle" class="split-toggle" type="button" aria-label="Toggle split editor" title="Toggle split editor" aria-pressed="false">
     <span class="material-symbols-outlined" aria-hidden="true">vertical_split</span>
   </button>
@@ -2015,6 +2285,8 @@
   <button id="nextArrow" class="nav-arrow right" type="button" aria-label="Next slide" hidden>
     <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
   </button>
+  <div id="verticalNav" class="vertical-nav" aria-hidden="true" hidden></div>
+  <div id="overview" class="overview" role="dialog" aria-label="Slide overview" hidden></div>
   <section id="searchPanel" class="search-panel" role="search" aria-label="Slide search" hidden>
     <label class="sr-only" for="searchInput">Search slides</label>
     <input id="searchInput" class="search-input" type="text" autocomplete="off" placeholder="Search slides..." />
@@ -2063,6 +2335,9 @@
     const state = {
       slides: [],
       index: 0,
+      col: 0,
+      row: 0,
+      grid: [],
       showTrainMap: false,
       frontmatter: {},
       search: {
@@ -2078,7 +2353,8 @@
       sourceMarkdown: "",
       slideStartedAt: 0,
       showDurationBar: false,
-      showGlobalDurationBar: false
+      showGlobalDurationBar: false,
+      overviewOpen: false
     };
 
     const appEl = document.querySelector(".app");
@@ -2118,6 +2394,9 @@
     const searchCloseEl = document.getElementById("searchClose");
     const prevArrowEl = document.getElementById("prevArrow");
     const nextArrowEl = document.getElementById("nextArrow");
+    const verticalNavEl = document.getElementById("verticalNav");
+    const overviewEl = document.getElementById("overview");
+    const overviewToggleEl = document.getElementById("overviewToggle");
     const srStatusEl = document.getElementById("srStatus");
     const urlLoadPanelEl = document.getElementById("urlLoadPanel");
     const urlLoadInputEl = document.getElementById("urlLoadInput");
@@ -2434,6 +2713,43 @@
           duration
         };
       });
+    }
+
+    function decodeHtml(html) {
+      const tmp = document.createElement("div");
+      tmp.innerHTML = html;
+      return tmp.textContent || "";
+    }
+
+    function buildGrid() {
+      if (!state.slides.length) { state.grid = []; state.col = 0; state.row = 0; return; }
+      const columns = [];
+      let col = [];
+      state.slides.forEach((slide, idx) => {
+        if (idx > 0 && /^<h1[\s>]/i.test(slide.html.trimStart())) {
+          columns.push(col);
+          col = [];
+        }
+        col.push(idx);
+      });
+      columns.push(col);
+      state.grid = columns;
+      syncGridFromIndex();
+    }
+
+    function syncGridFromIndex() {
+      for (let c = 0; c < state.grid.length; c++) {
+        const r = state.grid[c].indexOf(state.index);
+        if (r !== -1) { state.col = c; state.row = r; return; }
+      }
+      state.col = 0; state.row = 0;
+    }
+
+    function syncIndexFromGrid() {
+      const col = state.grid[state.col];
+      if (!col) return;
+      state.row = Math.max(0, Math.min(state.row, col.length - 1));
+      state.index = col[state.row];
     }
 
     function assignHeadingIds() {
@@ -3092,7 +3408,9 @@
       state.notesDelimiter = String(notesDelimiter || "").trim();
       if (state.sourceMarkdown) {
         state.slides = parseSlides(state.sourceMarkdown);
+        buildGrid();
         state.index = Math.min(state.index, Math.max(0, state.slides.length - 1));
+        syncGridFromIndex();
       }
       renderSlide();
       if (announce) {
@@ -3158,6 +3476,7 @@
 
       if (state.index !== target.slideIndex) {
         state.index = target.slideIndex;
+        syncGridFromIndex();
         renderSlide();
       } else {
         applySearchHighlights();
@@ -3397,7 +3716,13 @@
       renderTrainMap();
       renderDurationBar();
       renderNavArrows();
-      announceStatus(`Slide ${state.index + 1} of ${state.slides.length}`);
+      renderVerticalNav();
+      if (overviewToggleEl) overviewToggleEl.hidden = state.grid.length <= 1;
+      if (state.grid.length > 1) {
+        announceStatus(`Section ${state.col + 1} of ${state.grid.length}, slide ${state.row + 1} of ${state.grid[state.col].length}`);
+      } else {
+        announceStatus(`Slide ${state.index + 1} of ${state.slides.length}`);
+      }
     }
 
     function updateSlideAlignment() {
@@ -3417,17 +3742,162 @@
     }
 
     function goNext() {
-      if (state.index < state.slides.length - 1) {
-        state.index += 1;
-        renderSlide();
-      }
+      if (!state.grid.length) { if (state.index < state.slides.length - 1) { state.index++; renderSlide(); } return; }
+      const col = state.grid[state.col];
+      if (state.row < col.length - 1) state.row++;
+      else if (state.col < state.grid.length - 1) { state.col++; state.row = 0; }
+      else return;
+      syncIndexFromGrid(); renderSlide();
     }
 
     function goPrev() {
-      if (state.index > 0) {
-        state.index -= 1;
-        renderSlide();
-      }
+      if (!state.grid.length) { if (state.index > 0) { state.index--; renderSlide(); } return; }
+      if (state.row > 0) state.row--;
+      else if (state.col > 0) { state.col--; state.row = state.grid[state.col].length - 1; }
+      else return;
+      syncIndexFromGrid(); renderSlide();
+    }
+
+    function goRight() {
+      if (!state.grid.length || state.col >= state.grid.length - 1) return;
+      state.col++;
+      state.row = Math.min(state.row, state.grid[state.col].length - 1);
+      syncIndexFromGrid(); renderSlide();
+    }
+
+    function goLeft() {
+      if (!state.grid.length || state.col <= 0) return;
+      state.col--;
+      state.row = Math.min(state.row, state.grid[state.col].length - 1);
+      syncIndexFromGrid(); renderSlide();
+    }
+
+    function goDown() {
+      if (!state.grid.length) return;
+      if (state.row >= state.grid[state.col].length - 1) return;
+      state.row++; syncIndexFromGrid(); renderSlide();
+    }
+
+    function goUp() {
+      if (!state.grid.length || state.row <= 0) return;
+      state.row--; syncIndexFromGrid(); renderSlide();
+    }
+
+    function renderOverview() {
+      if (!overviewEl) return;
+      overviewEl.innerHTML = "";
+
+      const hint = document.createElement("div");
+      hint.className = "overview-hint";
+      hint.textContent = "Click a slide to jump — press O or Esc to close";
+      overviewEl.appendChild(hint);
+
+      const grid = document.createElement("div");
+      grid.className = "overview-grid";
+
+      state.grid.forEach((column, colIdx) => {
+        const colEl = document.createElement("div");
+        colEl.className = "overview-col";
+
+        const h1Match = (state.slides[column[0]]?.html || "").match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+        const title = h1Match ? decodeHtml(h1Match[1]) : `Section ${colIdx + 1}`;
+        const titleEl = document.createElement("div");
+        titleEl.className = "overview-col-title";
+        titleEl.textContent = title;
+        titleEl.title = title;
+        colEl.appendChild(titleEl);
+
+        column.forEach((flatIdx, rowIdx) => {
+          const slide = state.slides[flatIdx];
+          const isActive = colIdx === state.col && rowIdx === state.row;
+
+          const card = document.createElement("div");
+          card.className = "overview-card" + (isActive ? " active" : "");
+          card.setAttribute("aria-label", `${title}, slide ${rowIdx + 1}`);
+
+          const inner = document.createElement("div");
+          inner.className = "overview-card-inner";
+          inner.innerHTML = slide.html || "";
+          card.appendChild(inner);
+
+          const num = document.createElement("div");
+          num.className = "overview-card-num";
+          num.textContent = `${colIdx + 1}.${rowIdx + 1}`;
+          card.appendChild(num);
+
+          card.addEventListener("click", () => {
+            state.col = colIdx;
+            state.row = rowIdx;
+            syncIndexFromGrid();
+            closeOverview();
+            renderSlide();
+          });
+
+          colEl.appendChild(card);
+        });
+
+        grid.appendChild(colEl);
+      });
+
+      overviewEl.appendChild(grid);
+    }
+
+    function openOverview() {
+      if (!state.slides.length || !state.grid.length) return;
+      state.overviewOpen = true;
+      overviewEl.hidden = false;
+      overviewToggleEl?.classList.add("active");
+      overviewToggleEl?.setAttribute("aria-pressed", "true");
+      renderOverview();
+      overviewEl.focus();
+    }
+
+    function closeOverview() {
+      state.overviewOpen = false;
+      overviewEl.hidden = true;
+      overviewToggleEl?.classList.remove("active");
+      overviewToggleEl?.setAttribute("aria-pressed", "false");
+    }
+
+    function toggleOverview() {
+      if (state.overviewOpen) closeOverview();
+      else openOverview();
+    }
+
+    function renderVerticalNav() {
+      if (!verticalNavEl) return;
+      const col = state.grid[state.col];
+      const show = state.grid.length > 1 && col && col.length > 1;
+      verticalNavEl.hidden = !show;
+      if (!show) return;
+
+      verticalNavEl.innerHTML = "";
+
+      // Track line behind dots
+      const track = document.createElement("div");
+      track.className = "vn-track";
+      const fill = document.createElement("div");
+      fill.className = "vn-fill";
+      // Fill height: fraction of track covered up to (and including) active dot
+      const pct = col.length > 1 ? (state.row / (col.length - 1)) * 100 : 0;
+      fill.style.height = pct + "%";
+      track.appendChild(fill);
+      verticalNavEl.appendChild(track);
+
+      col.forEach((flatIdx, rowIdx) => {
+        const dot = document.createElement("button");
+        dot.type = "button";
+        dot.className = "vn-dot";
+        dot.setAttribute("aria-label", `Go to sub-slide ${rowIdx + 1} of ${col.length}`);
+        if (rowIdx < state.row) dot.classList.add("past");
+        if (rowIdx === state.row) dot.classList.add("active");
+        dot.addEventListener("click", () => {
+          state.row = rowIdx;
+          syncIndexFromGrid();
+          renderSlide();
+        });
+        verticalNavEl.appendChild(dot);
+      });
     }
 
     function renderNavArrows() {
@@ -3514,31 +3984,7 @@
       }
     }
 
-    function renderTrainMap() {
-      trainMapEl.innerHTML = "";
-
-      if (exportToggleEl) exportToggleEl.hidden = !state.slides.length;
-
-      if (!state.slides.length) {
-        state.showTrainMap = false;
-        appEl.classList.remove("train-visible");
-        mapToggleEl.disabled = true;
-        mapToggleEl.setAttribute("aria-pressed", "false");
-        mapToggleEl.setAttribute("aria-expanded", "false");
-        trainMapEl.setAttribute("aria-hidden", "true");
-        return;
-      }
-
-      mapToggleEl.disabled = false;
-      mapToggleEl.setAttribute("aria-pressed", String(state.showTrainMap));
-      mapToggleEl.setAttribute("aria-expanded", String(state.showTrainMap));
-      trainMapEl.setAttribute("aria-hidden", String(!state.showTrainMap));
-      appEl.classList.toggle("train-visible", state.showTrainMap);
-      if (!state.showTrainMap) {
-        updateSlideAlignment();
-        return;
-      }
-
+    function renderTrainMapLinear() {
       const track = document.createElement("div");
       track.className = "train-track";
       trainMapEl.appendChild(track);
@@ -3574,6 +4020,7 @@
         station.title = `Slide ${idx + 1}${durationLabel}`;
         station.addEventListener("click", () => {
           state.index = idx;
+          syncGridFromIndex();
           renderSlide();
         });
 
@@ -3598,6 +4045,91 @@
       updateSlideAlignment();
     }
 
+    function renderTrainMap() {
+      trainMapEl.innerHTML = "";
+
+      if (exportToggleEl) exportToggleEl.hidden = !state.slides.length;
+
+      if (!state.slides.length) {
+        state.showTrainMap = false;
+        appEl.classList.remove("train-visible");
+        mapToggleEl.disabled = true;
+        mapToggleEl.setAttribute("aria-pressed", "false");
+        mapToggleEl.setAttribute("aria-expanded", "false");
+        trainMapEl.setAttribute("aria-hidden", "true");
+        return;
+      }
+
+      mapToggleEl.disabled = false;
+      mapToggleEl.setAttribute("aria-pressed", String(state.showTrainMap));
+      mapToggleEl.setAttribute("aria-expanded", String(state.showTrainMap));
+      trainMapEl.setAttribute("aria-hidden", String(!state.showTrainMap));
+      appEl.classList.toggle("train-visible", state.showTrainMap);
+      if (!state.showTrainMap) {
+        updateSlideAlignment();
+        return;
+      }
+
+      const is2D = state.grid.length > 1;
+      trainMapEl.classList.toggle("is-2d", is2D);
+      trainMapEl.classList.toggle("has-durations", !is2D && state.slides.some(s => s.duration != null));
+
+      if (!is2D) {
+        renderTrainMapLinear();
+        return;
+      }
+
+      const gridEl = document.createElement("div");
+      gridEl.className = "train-grid";
+
+      state.grid.forEach((column, colIdx) => {
+        const colEl = document.createElement("div");
+        colEl.className = "train-col" + (colIdx === state.col ? " active-col" : "");
+
+        const h1Match = (state.slides[column[0]]?.html || "").match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+        const title = h1Match ? decodeHtml(h1Match[1]) : `Section ${colIdx + 1}`;
+        const headerEl = document.createElement("div");
+        headerEl.className = "train-col-header";
+        headerEl.textContent = title.length > 18 ? title.slice(0, 16) + "…" : title;
+        headerEl.title = title;
+        colEl.appendChild(headerEl);
+
+        column.forEach((flatIdx, rowIdx) => {
+          const slide = state.slides[flatIdx];
+          const isActive = colIdx === state.col && rowIdx === state.row;
+          const station = document.createElement("button");
+          station.type = "button";
+          station.className = "station" + (flatIdx < state.index ? " past" : "") + (isActive ? " active" : "");
+          if (isActive) station.setAttribute("aria-current", "step");
+          const durLabel = slide.duration != null ? ` (${formatDuration(slide.duration)})` : "";
+          station.setAttribute("aria-label", `Go to ${title}, slide ${rowIdx + 1}${durLabel}`);
+          station.title = `[${colIdx + 1},${rowIdx + 1}]${durLabel}`;
+          station.addEventListener("click", () => {
+            state.col = colIdx;
+            state.row = rowIdx;
+            syncIndexFromGrid();
+            renderSlide();
+          });
+          const numEl = document.createElement("span");
+          numEl.className = "station-num";
+          numEl.textContent = String(rowIdx + 1);
+          colEl.appendChild(station);
+          colEl.appendChild(numEl);
+          if (slide.duration != null) {
+            const dur = document.createElement("span");
+            dur.className = "station-duration";
+            dur.textContent = formatDuration(slide.duration);
+            colEl.appendChild(dur);
+          }
+        });
+
+        gridEl.appendChild(colEl);
+      });
+
+      trainMapEl.appendChild(gridEl);
+      updateSlideAlignment();
+    }
+
     function handleUpload(event) {
       const file = event.target.files?.[0];
       if (!file) {
@@ -3609,7 +4141,10 @@
         const text = String(reader.result || "");
         state.sourceMarkdown = text;
         state.slides = parseSlides(text);
+        buildGrid();
         state.index = 0;
+        state.col = 0;
+        state.row = 0;
         if (state.search.query.trim()) {
           rebuildSearchResults();
         }
@@ -3653,7 +4188,10 @@
         const text = await response.text();
         state.sourceMarkdown = text;
         state.slides = parseSlides(text);
+        buildGrid();
         state.index = 0;
+        state.col = 0;
+        state.row = 0;
         if (state.search.query.trim()) rebuildSearchResults();
         if (editorTextareaEl && appEl?.classList.contains("split-view")) {
           editorTextareaEl.value = text;
@@ -3725,6 +4263,8 @@
         setDelimiterPanelOpen(false);
       }
     });
+    overviewToggleEl?.addEventListener("click", toggleOverview);
+
     mapToggleEl.addEventListener("click", () => {
       if (!state.slides.length) {
         return;
@@ -3802,6 +4342,10 @@
       }
 
       if (event.key === "Escape") {
+        if (state.overviewOpen) {
+          closeOverview();
+          return;
+        }
         if (state.search.panelOpen) {
           setSearchPanelOpen(false);
           return;
@@ -3820,13 +4364,14 @@
         return;
       }
 
-      if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
-        event.preventDefault();
-        goNext();
-      }
-      if (event.key === "ArrowLeft" || event.key === "PageUp") {
-        event.preventDefault();
-        goPrev();
+      if (event.key === "ArrowRight")  { event.preventDefault(); goRight(); }
+      if (event.key === "ArrowLeft")   { event.preventDefault(); goLeft();  }
+      if (event.key === "ArrowDown")   { event.preventDefault(); goDown();  }
+      if (event.key === "ArrowUp")     { event.preventDefault(); goUp();    }
+      if (event.key === " " || event.key === "PageDown") { event.preventDefault(); goNext(); }
+      if (event.key === "PageUp")      { event.preventDefault(); goPrev();  }
+      if (event.key.toLowerCase() === "o" && !event.ctrlKey && !event.metaKey && !event.altKey && state.grid.length > 1) {
+        toggleOverview();
       }
       if (event.key.toLowerCase() === "m" && event.altKey && state.slides.length) {
         state.showTrainMap = !state.showTrainMap;
@@ -4094,7 +4639,9 @@ ${bodyHtml}
         const text = editorTextareaEl.value;
         state.sourceMarkdown = text;
         state.slides = parseSlides(text);
+        buildGrid();
         state.index = Math.min(state.index, Math.max(0, state.slides.length - 1));
+        syncGridFromIndex();
         renderSlide();
         updateEditorStatus();
       }, 400);
