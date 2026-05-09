@@ -1335,7 +1335,28 @@
 
     .slide ul,
     .slide ol {
+      margin: 0;
       padding-left: 1.4em;
+    }
+
+    .slide li > ul,
+    .slide li > ol {
+      margin-top: 0.8em;
+    }
+
+    .slide li > p {
+      margin: 0;
+    }
+
+    .slide li > p:not(:last-child) {
+      margin-bottom: 0.4em;
+    }
+
+    .slide s,
+    .slide del {
+      text-decoration: line-through;
+      text-decoration-thickness: 1px;
+      text-decoration-skip-ink: auto;
     }
 
     .slide code {
@@ -1371,6 +1392,28 @@
       padding-left: 0.9em;
       border-left: 4px solid #cfe2fa;
       color: #3e4c64;
+    }
+
+    .slide blockquote.callout {
+      background: #f0f5ff;
+      padding: 0;
+      margin: 0.8em 0;
+      border-radius: 6px;
+      border-left: 4px solid #3b82f6;
+      overflow: hidden;
+    }
+
+    .slide .callout-title {
+      background: #e0edff;
+      padding: 0.8em 1em;
+      font-weight: bold;
+      color: #1e3a8a;
+      border-bottom: 1px solid #bfdbfe;
+    }
+
+    .slide blockquote.callout p {
+      margin: 0;
+      padding: 1em;
     }
 
     .slide table {
@@ -2135,6 +2178,14 @@
         mangle: false,
         html: true
       });
+
+      window.marked.use({
+        renderer: {
+          del({ tokens }) {
+            return `<span style="text-decoration:line-through;text-decoration-thickness:1px;">${this.parser.parseInline(tokens)}</span>`;
+          }
+        }
+      });
     }
 
     if (window.mermaid) {
@@ -2290,7 +2341,7 @@
 
       // x^2^ and H~2~ style markers
       text = text.replace(/\^([^\^\s][^\^]*?)\^/g, "<sup>$1</sup>");
-      text = text.replace(/~([^~\s][^~]*?)~/g, "<sub>$1</sub>");
+      text = text.replace(/(?<!~)~([^~\s][^~]*?)~(?!~)/g, "<sub>$1</sub>");
 
       return transformFootnotes(text);
     }
@@ -2399,6 +2450,36 @@
         const count = seen.get(base) || 0;
         seen.set(base, count + 1);
         heading.id = count ? `${base}-${count + 1}` : base;
+      });
+    }
+
+    function cleanObsidianCallouts() {
+      const contentRoot = slideEl.querySelector(".slide-content");
+      if (!contentRoot) {
+        return;
+      }
+      contentRoot.querySelectorAll("blockquote").forEach((bq) => {
+        const p = bq.querySelector("p");
+        if (!p) return;
+        const text = p.textContent;
+        const match = text.match(/^\[!(\w+)\]\s+(.+?)(?:\n|$)/);
+        if (match) {
+          const type = match[1].toLowerCase();
+          const title = match[2];
+          const rest = text.substring(match[0].length).trim();
+          bq.classList.add("callout", `callout-${type}`);
+
+          // Create header with title
+          const header = document.createElement("div");
+          header.className = "callout-title";
+          header.textContent = title;
+
+          // Update paragraph with just the content
+          p.textContent = rest;
+
+          // Insert header before paragraph
+          bq.insertBefore(header, p);
+        }
       });
     }
 
@@ -3301,6 +3382,7 @@
       `;
       applyZoomToCurrentSlide();
       assignHeadingIds();
+      cleanObsidianCallouts();
       configureEmbeds();
       enhanceMediaAccessibility();
       enhanceCallouts();
