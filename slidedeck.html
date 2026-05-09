@@ -1988,6 +1988,112 @@
       color: #fff;
     }
 
+    .outline-toggle {
+      position: fixed;
+      right: 16px;
+      bottom: 430px;
+      z-index: 210;
+      border: 0;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #2e3c54;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(21, 34, 54, 0.14);
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, color 120ms ease;
+    }
+
+    .outline-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(21, 34, 54, 0.18);
+    }
+
+    .outline-toggle:focus-visible {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .outline-toggle .material-symbols-outlined {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .outline-toggle.active {
+      background: var(--accent, #1c7ed6);
+      color: #fff;
+    }
+
+    .outline-panel {
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      background: #ffffff;
+      border: 1px solid #d5deeb;
+      border-radius: 10px;
+      padding: 12px;
+      min-width: 240px;
+      max-width: min(360px, calc(100vw - 24px));
+      max-height: calc(100vh - 24px);
+      overflow: auto;
+      box-shadow: 0 14px 28px rgba(21, 34, 54, 0.2), 0 0 0 3px rgba(255, 255, 255, 0.95);
+    }
+
+    .outline-panel[hidden] {
+      display: none;
+    }
+
+    .outline-panel__heading {
+      margin: 0 0 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #49586f;
+    }
+
+    .outline-panel__list {
+      margin: 0;
+      padding: 0 0 0 1.4em;
+      list-style: decimal;
+    }
+
+    .outline-panel__list li {
+      padding: 3px 0;
+    }
+
+    .outline-panel__list button {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 0.9rem;
+      color: #1e2430;
+      cursor: pointer;
+      text-align: left;
+      line-height: 1.4;
+      font-family: inherit;
+    }
+
+    .outline-panel__list button:hover {
+      color: var(--accent, #1c7ed6);
+      text-decoration: underline;
+    }
+
+    .outline-panel__list li.is-current button {
+      font-weight: 700;
+      color: var(--accent, #1c7ed6);
+    }
+
     .split-toggle {
       position: fixed;
       right: 16px;
@@ -2264,6 +2370,9 @@
   <button id="overviewToggle" class="overview-toggle" type="button" aria-label="Show slide overview" title="Show slide overview (O)" aria-pressed="false" hidden>
     <span class="material-symbols-outlined" aria-hidden="true">grid_view</span>
   </button>
+  <button id="outlineToggle" class="outline-toggle" type="button" aria-label="Show plan / outline" title="Plan / Outline" aria-controls="outlinePanel" aria-expanded="false">
+    <span class="material-symbols-outlined" aria-hidden="true">toc</span>
+  </button>
   <button id="splitToggle" class="split-toggle" type="button" aria-label="Toggle split editor" title="Toggle split editor" aria-pressed="false">
     <span class="material-symbols-outlined" aria-hidden="true">vertical_split</span>
   </button>
@@ -2312,6 +2421,10 @@
       <button id="zoomReset" class="zoom-action" type="button" aria-label="Reset zoom">100%</button>
       <button id="zoomIn" class="zoom-action" type="button" aria-label="Zoom in">+</button>
     </div>
+  </section>
+  <section id="outlinePanel" class="outline-panel" role="region" aria-label="Plan / Outline" hidden>
+    <h2 class="outline-panel__heading">Plan</h2>
+    <ol class="outline-panel__list" id="outlineList"></ol>
   </section>
   <section id="urlLoadPanel" class="url-load-panel" role="region" aria-label="Load Markdown from URL" hidden>
     <div class="url-load-panel-row">
@@ -2397,6 +2510,9 @@
     const verticalNavEl = document.getElementById("verticalNav");
     const overviewEl = document.getElementById("overview");
     const overviewToggleEl = document.getElementById("overviewToggle");
+    const outlineToggleEl = document.getElementById("outlineToggle");
+    const outlinePanelEl  = document.getElementById("outlinePanel");
+    const outlineListEl   = document.getElementById("outlineList");
     const srStatusEl = document.getElementById("srStatus");
     const urlLoadPanelEl = document.getElementById("urlLoadPanel");
     const urlLoadInputEl = document.getElementById("urlLoadInput");
@@ -4467,6 +4583,82 @@
 
     window.addEventListener("resize", () => {
       if (!settingsPanelEl?.hidden) positionSettingsPanel(settingsAnchorEl);
+    });
+    // ─────────────────────────────────────────────────────────────────────
+
+    // ── Outline / Plan panel ──────────────────────────────────────────────
+    let outlineAnchorEl = null;
+
+    function positionOutlinePanel(anchorEl) {
+      if (!outlinePanelEl || !anchorEl || outlinePanelEl.hidden) return;
+      const rect = anchorEl.getBoundingClientRect();
+      const panelRect = outlinePanelEl.getBoundingClientRect();
+      const margin = 12;
+      const gap = 10;
+      let top = rect.top - panelRect.height - gap;
+      if (top < margin) top = rect.bottom + gap;
+      let left = rect.right - panelRect.width;
+      if (left < margin) left = margin;
+      outlinePanelEl.style.top  = `${top}px`;
+      outlinePanelEl.style.left = `${left}px`;
+    }
+
+    function buildOutline() {
+      if (!outlineListEl) return;
+      outlineListEl.innerHTML = "";
+      const _tmp = document.createElement("div");
+      let displayIndex = 0;
+      state.slides.forEach((slide, i) => {
+        const m = slide.html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+        if (!m) return;
+        _tmp.innerHTML = m[1].replace(/<[^>]+>/g, "");
+        const title = _tmp.textContent.replace(/\s+/g, " ").trim();
+        if (!title) return;
+        displayIndex++;
+        const li = document.createElement("li");
+        if (i === state.index) li.classList.add("is-current");
+        const btn = document.createElement("button");
+        btn.textContent = title;
+        btn.addEventListener("click", () => {
+          state.index = i;
+          renderSlide();
+          setOutlinePanelOpen(false);
+        });
+        li.appendChild(btn);
+        outlineListEl.appendChild(li);
+      });
+    }
+
+    function setOutlinePanelOpen(open, anchorEl = null) {
+      if (!outlinePanelEl) return;
+      outlinePanelEl.hidden = !open;
+      if (outlineToggleEl) {
+        outlineToggleEl.setAttribute("aria-expanded", String(open));
+        outlineToggleEl.classList.toggle("active", open);
+      }
+      if (open) {
+        if (anchorEl) outlineAnchorEl = anchorEl;
+        buildOutline();
+        positionOutlinePanel(outlineAnchorEl);
+      }
+    }
+
+    outlineToggleEl?.addEventListener("click", () => {
+      setZoomPanelOpen(false);
+      setSettingsPanelOpen(false);
+      setOutlinePanelOpen(outlinePanelEl.hidden, outlineToggleEl);
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!outlinePanelEl?.hidden &&
+          !outlinePanelEl.contains(e.target) &&
+          !outlineToggleEl.contains(e.target)) {
+        setOutlinePanelOpen(false);
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      if (!outlinePanelEl?.hidden) positionOutlinePanel(outlineAnchorEl);
     });
     // ─────────────────────────────────────────────────────────────────────
 
