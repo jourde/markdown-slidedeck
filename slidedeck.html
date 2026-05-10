@@ -2147,10 +2147,12 @@
       border: 1px solid #d5deeb;
       border-radius: 10px;
       padding: 12px;
-      min-width: 240px;
-      max-width: min(360px, calc(100vw - 24px));
+      min-width: 280px;
+      max-width: min(440px, calc(100vw - 24px));
+      min-height: 200px;
       max-height: calc(100vh - 24px);
       overflow: auto;
+      resize: both;
       box-shadow: 0 14px 28px rgba(21, 34, 54, 0.2), 0 0 0 3px rgba(255, 255, 255, 0.95);
     }
 
@@ -2212,6 +2214,20 @@
     }
 
     .outline-panel__list li.is-hidden button {
+      color: #aab2be;
+      text-decoration: line-through;
+    }
+
+    .outline-panel__subitem {
+      padding-left: 20px;
+    }
+
+    .outline-panel__subitem button {
+      font-size: 0.82rem;
+      color: #49586f;
+    }
+
+    .outline-panel__subitem.is-hidden button {
       color: #aab2be;
       text-decoration: line-through;
     }
@@ -2597,7 +2613,8 @@
       showGlobalDurationBar: false,
       overviewOpen: false,
       trainMapHeight: null,
-      hiddenSections: new Set()
+      hiddenSections: new Set(),
+      hiddenSlides: new Set()
     };
 
     const appEl = document.querySelector(".app");
@@ -2972,6 +2989,7 @@
 
     function buildGrid() {
       state.hiddenSections = new Set();
+      state.hiddenSlides = new Set();
       if (!state.slides.length) { state.grid = []; state.col = 0; state.row = 0; return; }
       const columns = [];
       let col = [];
@@ -2986,11 +3004,17 @@
       state.grid = columns;
       state.grid.forEach((colSlides, colIdx) => {
         for (const si of colSlides) {
-          if (/^#[^#\n].* --\s*$/m.test(state.slides[si].content)) {
+          const content = state.slides[si].content;
+          if (/^#[^#\n].* --\s*$/m.test(content)) {
             state.hiddenSections.add(colIdx);
             break;
           }
         }
+        colSlides.slice(1).forEach(si => {
+          if (/^#{2,}\s.* --\s*$/m.test(state.slides[si].content)) {
+            state.hiddenSlides.add(si);
+          }
+        });
       });
       syncGridFromIndex();
     }
@@ -3912,7 +3936,7 @@
         slideEl.innerHTML = `
           <div class="empty">
             <div>
-              <strong>First, choose the slide delimiters used in your Markdown, then import or drag &amp; drop a Markdown file — or load it from a URL (GitHub, GitLab, Bitbucket, Obsidian Publish…). Use the Plan panel to hide sections from navigation, or add -- at the end of a heading to skip it by default.</strong>
+              <strong>First, choose the slide delimiters used in your Markdown, then import or drag &amp; drop a Markdown file — or load it from a URL (GitHub, GitLab, Bitbucket, Obsidian Publish…). Use the Plan panel to hide any heading from navigation, or add -- at the end of a heading (H1–H6) to skip it by default.</strong>
               <div class="empty-flow">
                 <button
                   class="empty-step"
@@ -4035,18 +4059,51 @@
       return -1;
     }
 
+    function nextVisibleRow(colIdx, fromRow) {
+      const colSlides = state.grid[colIdx];
+      for (let r = fromRow + 1; r < colSlides.length; r++) {
+        if (!state.hiddenSlides.has(colSlides[r])) return r;
+      }
+      return -1;
+    }
+
+    function prevVisibleRow(colIdx, fromRow) {
+      const colSlides = state.grid[colIdx];
+      for (let r = fromRow - 1; r >= 0; r--) {
+        if (!state.hiddenSlides.has(colSlides[r])) return r;
+      }
+      return -1;
+    }
+
+    function firstVisibleRow(colIdx) {
+      const colSlides = state.grid[colIdx];
+      for (let r = 0; r < colSlides.length; r++) {
+        if (!state.hiddenSlides.has(colSlides[r])) return r;
+      }
+      return 0;
+    }
+
+    function lastVisibleRow(colIdx) {
+      const colSlides = state.grid[colIdx];
+      for (let r = colSlides.length - 1; r >= 0; r--) {
+        if (!state.hiddenSlides.has(colSlides[r])) return r;
+      }
+      return colSlides.length - 1;
+    }
+
     function goNext() {
       if (!state.grid.length) { if (state.index < state.slides.length - 1) { state.index++; renderSlide(); } return; }
-      const col = state.grid[state.col];
-      if (state.row < col.length - 1) state.row++;
-      else { const nc = nextVisibleCol(state.col); if (nc === -1) return; state.col = nc; state.row = 0; }
+      const nr = nextVisibleRow(state.col, state.row);
+      if (nr !== -1) { state.row = nr; }
+      else { const nc = nextVisibleCol(state.col); if (nc === -1) return; state.col = nc; state.row = firstVisibleRow(nc); }
       syncIndexFromGrid(); renderSlide();
     }
 
     function goPrev() {
       if (!state.grid.length) { if (state.index > 0) { state.index--; renderSlide(); } return; }
-      if (state.row > 0) state.row--;
-      else { const pc = prevVisibleCol(state.col); if (pc === -1) return; state.col = pc; state.row = state.grid[pc].length - 1; }
+      const pr = prevVisibleRow(state.col, state.row);
+      if (pr !== -1) { state.row = pr; }
+      else { const pc = prevVisibleCol(state.col); if (pc === -1) return; state.col = pc; state.row = lastVisibleRow(pc); }
       syncIndexFromGrid(); renderSlide();
     }
 
@@ -4054,7 +4111,7 @@
       if (!state.grid.length) return;
       const nc = nextVisibleCol(state.col);
       if (nc === -1) return;
-      state.col = nc; state.row = 0;
+      state.col = nc; state.row = firstVisibleRow(nc);
       syncIndexFromGrid(); renderSlide();
     }
 
@@ -4062,19 +4119,22 @@
       if (!state.grid.length) return;
       const pc = prevVisibleCol(state.col);
       if (pc === -1) return;
-      state.col = pc; state.row = 0;
+      state.col = pc; state.row = firstVisibleRow(pc);
       syncIndexFromGrid(); renderSlide();
     }
 
     function goDown() {
       if (!state.grid.length) return;
-      if (state.row >= state.grid[state.col].length - 1) return;
-      state.row++; syncIndexFromGrid(); renderSlide();
+      const nr = nextVisibleRow(state.col, state.row);
+      if (nr === -1) return;
+      state.row = nr; syncIndexFromGrid(); renderSlide();
     }
 
     function goUp() {
-      if (!state.grid.length || state.row <= 0) return;
-      state.row--; syncIndexFromGrid(); renderSlide();
+      if (!state.grid.length) return;
+      const pr = prevVisibleRow(state.col, state.row);
+      if (pr === -1) return;
+      state.row = pr; syncIndexFromGrid(); renderSlide();
     }
 
     function renderOverview() {
@@ -4897,43 +4957,56 @@
       outlineListEl.innerHTML = "";
       if (!state.grid.length) return;
       const _tmp = document.createElement("div");
-      state.grid.forEach((colSlides, colIdx) => {
-        let title = "";
-        let jumpIdx = colSlides[0];
-        for (const si of colSlides) {
-          const m = state.slides[si]?.html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-          if (m) {
-            _tmp.innerHTML = m[1].replace(/<[^>]+>/g, "");
-            title = _tmp.textContent.replace(/\s+/g, " ").trim();
-            jumpIdx = si;
-            break;
-          }
-        }
-        if (!title) return;
-        const isHidden = state.hiddenSections.has(colIdx);
+
+      function makeItem(title, slideIdx, isHidden, isCurrent, subitem, onToggle) {
         const li = document.createElement("li");
-        if (colSlides.includes(state.index)) li.classList.add("is-current");
+        if (subitem) li.className = "outline-panel__subitem";
+        if (isCurrent) li.classList.add("is-current");
         if (isHidden) li.classList.add("is-hidden");
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = !isHidden;
         checkbox.className = "outline-panel__check";
         checkbox.setAttribute("aria-label", (isHidden ? "Show " : "Hide ") + title);
-        checkbox.addEventListener("change", () => {
-          if (checkbox.checked) state.hiddenSections.delete(colIdx);
-          else state.hiddenSections.add(colIdx);
-          buildOutline();
-        });
+        checkbox.addEventListener("change", () => { onToggle(checkbox.checked); buildOutline(); });
         const btn = document.createElement("button");
         btn.textContent = title;
-        btn.addEventListener("click", () => {
-          state.index = jumpIdx;
-          renderSlide();
-          setOutlinePanelOpen(false);
-        });
+        btn.addEventListener("click", () => { state.index = slideIdx; renderSlide(); setOutlinePanelOpen(false); });
         li.appendChild(checkbox);
         li.appendChild(btn);
-        outlineListEl.appendChild(li);
+        return li;
+      }
+
+      state.grid.forEach((colSlides, colIdx) => {
+        let colTitle = "";
+        let colJumpIdx = colSlides[0];
+        for (const si of colSlides) {
+          const m = state.slides[si]?.html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+          if (m) {
+            _tmp.innerHTML = m[1].replace(/<[^>]+>/g, "");
+            colTitle = _tmp.textContent.replace(/\s+/g, " ").trim();
+            colJumpIdx = si;
+            break;
+          }
+        }
+        if (!colTitle) return;
+        outlineListEl.appendChild(makeItem(
+          colTitle, colJumpIdx, state.hiddenSections.has(colIdx),
+          colSlides.includes(state.index), false,
+          checked => checked ? state.hiddenSections.delete(colIdx) : state.hiddenSections.add(colIdx)
+        ));
+        colSlides.slice(1).forEach(si => {
+          const m = state.slides[si]?.html.match(/<h([2-6])[^>]*>([\s\S]*?)<\/h\1>/i);
+          if (!m) return;
+          _tmp.innerHTML = m[2].replace(/<[^>]+>/g, "");
+          const subTitle = _tmp.textContent.replace(/\s+/g, " ").trim();
+          if (!subTitle) return;
+          outlineListEl.appendChild(makeItem(
+            subTitle, si, state.hiddenSlides.has(si),
+            si === state.index, true,
+            checked => checked ? state.hiddenSlides.delete(si) : state.hiddenSlides.add(si)
+          ));
+        });
       });
     }
 
