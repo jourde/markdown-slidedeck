@@ -2984,6 +2984,14 @@
       });
       columns.push(col);
       state.grid = columns;
+      state.grid.forEach((colSlides, colIdx) => {
+        for (const si of colSlides) {
+          if (/^#[^#\n].* --\s*$/m.test(state.slides[si].content)) {
+            state.hiddenSections.add(colIdx);
+            break;
+          }
+        }
+      });
       syncGridFromIndex();
     }
 
@@ -3904,7 +3912,7 @@
         slideEl.innerHTML = `
           <div class="empty">
             <div>
-              <strong>First, choose the slide delimiters used in your Markdown, then import or drag &amp; drop a Markdown file — or load it from a URL (GitHub, GitLab, Bitbucket, Obsidian Publish…). Use the Plan panel to hide sections from navigation.</strong>
+              <strong>First, choose the slide delimiters used in your Markdown, then import or drag &amp; drop a Markdown file — or load it from a URL (GitHub, GitLab, Bitbucket, Obsidian Publish…). Use the Plan panel to hide sections from navigation, or add -- at the end of a heading to skip it by default.</strong>
               <div class="empty-flow">
                 <button
                   class="empty-step"
