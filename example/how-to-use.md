@@ -39,6 +39,15 @@ Raw GitHub URLs always support CORS. If you get a network error from another hos
 
 ---
 
+# Writing Slides
+
+Everything you need to structure your Markdown file as a slide deck.
+
+-- duration: 15s
+This section covers delimiters, speaker notes, timing, and frontmatter.
+
+---
+
 ## Slide Delimiters
 
 Slides are separated by a delimiter on its own line.
@@ -53,7 +62,7 @@ Slide one content
 Slide two content
 ```
 
-Other options: `===`, or **# H1** mode where each top-level heading starts a new slide.
+Other options: `===`, a custom string, or **# H1** mode where each top-level heading starts a new slide.
 Change the delimiter anytime via the **Choose delimiters** panel.
 
 -- duration: 1m
@@ -74,6 +83,8 @@ These notes are only shown in the notes panel.
 They can span multiple lines.
 ```
 
+Alternatively, use `notes:` as the notes delimiter. Both options are available in the **Choose delimiters** panel.
+
 Notes are hidden from the main slide view and only visible in the speaker notes area.
 
 -- duration: 45s
@@ -88,9 +99,9 @@ Add a duration hint directly on the notes delimiter line:
 - `-- duration: 2m` — minutes
 - `-- duration: 90s` — seconds
 - `-- duration: 1m30s` — minutes and seconds combined
+- `-- duration: 2:00` — colon notation also works
 
-Once durations are set, a **progress bar** appears at the bottom of the slide.
-A **global timer** tracks your total session progress across all slides.
+Once durations are set, toggle the **per-slide progress bar** with the hourglass button, and the **global session timer** with the timer button. Both are in the bottom toolbar.
 
 -- duration: 1m
 Durations are optional — you can add them to some slides and leave others without.
@@ -98,19 +109,82 @@ The global bar only appears when at least one slide has a duration set.
 
 ---
 
+## Frontmatter
+
+Add YAML frontmatter at the very top of your Markdown file to set metadata:
+
+```
+---
+title: My Presentation
+author: Jane Smith
+date: 2026-01-01
+---
+
+## First Slide
+```
+
+Frontmatter is parsed and stored but does not appear as slide content.
+
+-- duration: 20s
+The frontmatter block must start on the very first line and be closed by a second --- before any slide content.
+
+---
+
+# Navigating
+
+Move through your deck efficiently — with keyboard shortcuts, the overview, and the route map.
+
+-- duration: 15s
+This section covers navigation keys, the slide overview, the route map, and search.
+
+---
+
 ## Navigation
 
 | Action | Key or control |
 |---|---|
-| Next slide | `→` `Space` `Page Down` |
-| Previous slide | `←` `Page Up` |
-| Toggle nav arrows | Arrow button (bottom right) |
+| Move to next section | `→` |
+| Move to previous section | `←` |
+| Move to sub-slide below | `↓` |
+| Move to sub-slide above | `↑` |
+| Next slide (linear) | `Space` `Page Down` |
+| Previous slide (linear) | `Page Up` |
+| Toggle nav arrows | **⇄** button |
 
-The on-screen arrows can be shown or hidden with the **⇄** button.
-They are hidden by default for a cleaner presentation view.
+Slides starting with an `# H1` heading each form a **section** (column). Slides within a section are sub-slides (rows). The vertical dot strip on the right edge tracks your position within a section.
+
+-- duration: 45s
+Keyboard navigation is the fastest way to move through slides during a presentation.
+The vertical nav strip only appears when the current section has more than one sub-slide.
+
+---
+
+## Slide Overview
+
+Press `O` or click the **grid_view** button to open the slide overview.
+
+- All slides are shown as thumbnail cards, grouped by section
+- The active slide is highlighted
+- Click any card to jump directly to that slide
+- Press `O` or `Esc` to close
 
 -- duration: 30s
-Keyboard navigation is the fastest way to move through slides during a presentation.
+The overview is the quickest way to jump to any slide at a glance, especially in long presentations.
+
+---
+
+## Route Map
+
+Press `Alt M` to toggle the **route map** — a compact track of all slides along the bottom.
+
+- Each dot represents one slide; section boundaries are marked with a tick
+- The current slide is highlighted with a pulsing dot
+- Click any dot to jump directly to that slide
+- Dots with a duration show a small timer badge
+- Slides with a title show a short label below the dot
+
+-- duration: 30s
+The route map is especially useful in long presentations to keep track of where you are.
 
 ---
 
@@ -122,28 +196,64 @@ Press `Ctrl F` (or `Cmd F` on Mac) to open the search bar.
 - Use `↑` `↓` to jump between matches
 - The slide view navigates automatically to each match
 
+Press `Esc` or click **✕** to close the search bar.
+
 -- duration: 30s
 Search is case-insensitive and works across slide content only — not speaker notes.
 
 ---
 
-## Slide Map
+# Interface
 
-Press `Alt M` to toggle the **train map** — a compact overview of all slides.
+Customise how the app looks and behaves during your presentation.
 
-- Each dot represents one slide
-- The current slide is highlighted
-- Click any dot to jump directly to that slide
-- Slides with a duration show a small timer badge
-
--- duration: 30s
-The train map is especially useful in long presentations to keep track of where you are.
+-- duration: 15s
+This section covers fullscreen, zoom, the outline, and appearance settings.
 
 ---
 
-## Interface Settings
+## Fullscreen
 
-Click the **⊟ tune** button (bottom right) to open the settings panel.
+Press `F` or click the **fullscreen** button (bottom right) to enter fullscreen mode.
+
+Press `F` again (or `Esc` from fullscreen) to exit.
+
+Fullscreen hides the browser chrome for a distraction-free presentation experience.
+
+-- duration: 15s
+Fullscreen is supported in all modern browsers. On some systems, the first use prompts for permission.
+
+---
+
+## Zoom
+
+Click the **zoom_in** button to open the zoom panel.
+
+- Use **–** and **+** to step the content scale from 80% to 150%
+- Click **100%** to reset to the default size
+- The current zoom level is shown in the panel
+
+Zoom is saved automatically alongside your other settings.
+
+-- duration: 20s
+Zoom scales the slide content without affecting the layout or overflow behaviour.
+
+---
+
+## Plan / Outline
+
+Click the **toc** (table of contents) button to open the Plan panel.
+
+The panel lists all slides that have an `# H1` heading. Click any entry to jump directly to that section.
+
+-- duration: 20s
+The outline is built automatically from H1 headings. It updates as you navigate.
+
+---
+
+## Appearance Settings
+
+Click the **tune** button (bottom right) to open the settings panel.
 
 **Background** — choose from 6 soft colour palettes:
 Cloud · Warm · Sage · Slate · Lavender · Dusk
@@ -151,10 +261,55 @@ Cloud · Warm · Sage · Slate · Lavender · Dusk
 **Font** — choose from 4 system typefaces:
 Sans-serif · Serif · Rounded · Monospace
 
+Click **Reset to defaults** to restore the original appearance.
 Settings are saved automatically and restored on your next visit.
 
 -- duration: 45s
 All settings are stored in your browser's localStorage — they persist across reloads but are local to your machine.
+
+---
+
+# Editing & Exporting
+
+Author your deck inside the app and export it as a self-contained HTML file.
+
+-- duration: 15s
+This section covers the split-view editor and the HTML export feature.
+
+---
+
+## Split-View Editor
+
+Click the **vertical_split** button to open the built-in Markdown editor alongside the slide preview.
+
+- Edit the Markdown source directly in the left panel
+- The slide preview updates automatically as you type
+- Click **Download .md** in the editor header to save the current source as a file
+
+The split editor is useful for authoring and refining slides without switching applications.
+
+-- duration: 30s
+The editor shows the raw Markdown for the entire deck, not just the current slide.
+
+---
+
+## Export as HTML
+
+Click the **download** button (visible once a deck is loaded) to export the current presentation as a self-contained HTML file.
+
+The exported file includes all slides, settings, and the app runtime — it can be opened in any browser without an internet connection.
+
+-- duration: 20s
+The export captures your current background and font settings as defaults in the exported file.
+
+---
+
+# Markdown Features
+
+What you can put inside a slide — beyond basic text.
+
+-- duration: 15s
+This section covers the full range of content types supported in slides.
 
 ---
 
@@ -168,6 +323,9 @@ Full **CommonMark** Markdown is supported:
 - Blockquotes, tables, horizontal rules
 - Fenced code blocks with syntax hints
 - Images — automatically constrained to fit the slide
+- Footnotes[^1]
+
+[^1]: Footnote definitions are placed at the bottom of a slide's content.
 
 -- duration: 45s
 Images are scaled to a maximum of 100% width and 65% viewport height, preserving aspect ratio. No manual sizing needed.
@@ -189,10 +347,97 @@ def greet(name):
     return f"Hello, {name}!"
 ```
 
-Language hints after the opening ` ``` ` are supported.
+Language hints after the opening ` ``` ` are supported. Use ` ```mermaid ` for diagrams.
 
 -- duration: 30s
 Code blocks scroll horizontally if the content is wider than the slide.
+
+---
+
+## Mermaid Diagrams
+
+Use a fenced code block with the `mermaid` language hint to render diagrams:
+
+````
+```mermaid
+flowchart LR
+  A[Write] --> B[Present]
+```
+````
+
+Flowcharts, sequence diagrams, Gantt charts, and all other Mermaid diagram types are supported.
+
+-- duration: 30s
+Mermaid diagrams are rendered entirely in the browser — no server required.
+
+---
+
+## Math (KaTeX)
+
+Write LaTeX-style math inline with `$...$` or as a display block with `$$...$$`:
+
+Inline: $E = mc^2$
+
+Display:
+
+$$\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}$$
+
+-- duration: 30s
+Math is rendered by KaTeX, a fast client-side LaTeX engine. Standard LaTeX math syntax is supported.
+
+---
+
+## Callouts
+
+Use Obsidian-style callout syntax to create styled alert boxes:
+
+```
+> [!note]
+> This is a note callout.
+
+> [!tip] Custom title
+> A tip with a custom title.
+
+> [!warning]
+> Something to watch out for.
+```
+
+Available types: `note` · `tip` · `info` · `success` · `warning` · `danger` · `question` · `example` · `quote`
+
+Add `-` after the type (e.g. `[!note]-`) to start the callout collapsed.
+
+-- duration: 45s
+Callout type names match Obsidian conventions. Many aliases are also supported (e.g. hint, caution, bug).
+
+---
+
+## QR Codes
+
+Generate QR codes directly in a slide using either syntax:
+
+**Image syntax** (alt text starts with `qr`):
+```
+![qr](https://example.com)
+```
+
+**Div syntax** (for more control):
+```html
+<div data-qr="https://example.com" data-size="200"></div>
+```
+
+The QR code is rendered in the browser using the qrcodejs library.
+
+-- duration: 30s
+The data-size attribute controls the pixel dimensions. Default is 200 × 200 px.
+
+---
+
+# Reference
+
+A quick reference for examples, shortcuts, and tips.
+
+-- duration: 15s
+This section has a complete slide example, a keyboard shortcut table, and practical tips.
 
 ---
 
@@ -219,13 +464,34 @@ The delimiter line must contain only the delimiter characters — no spaces befo
 
 ---
 
+## Keyboard Reference
+
+| Action | Shortcut |
+|---|---|
+| Next / Previous section | `→` / `←` |
+| Sub-slide below / above | `↓` / `↑` |
+| Next (linear) | `Space` `Page Down` |
+| Previous (linear) | `Page Up` |
+| Slide overview | `O` |
+| Route map | `Alt M` |
+| Search | `Ctrl F` / `Cmd F` |
+| Fullscreen | `F` |
+| Close any panel | `Esc` |
+
+-- duration: 30s
+All keyboard shortcuts work when focus is on the slide — not when a text input is active.
+
+---
+
 ## Tips
 
 - Keep slides **focused** — one idea per slide works best
 - Use `---` on its own line; extra spaces will break detection
 - Speaker notes are a great place for **talking points** and **statistics**
-- The `# H1` delimiter mode works well for existing Markdown documents
+- The `# H1` delimiter mode works well for existing Markdown documents and creates sections automatically
 - Imported files stay **local** — nothing is uploaded; URL-loaded files are fetched directly from their host
+- The **split editor** lets you author and preview at the same time — download the result when done
+- Use `O` during a presentation to jump to any slide instantly
 
 -- duration: 1m
 You can re-import a file at any time — the app will reload from the beginning.
