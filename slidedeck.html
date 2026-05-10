@@ -2169,12 +2169,22 @@
 
     .outline-panel__list {
       margin: 0;
-      padding: 0 0 0 1.4em;
-      list-style: decimal;
+      padding: 0;
+      list-style: none;
     }
 
     .outline-panel__list li {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
       padding: 3px 0;
+    }
+
+    .outline-panel__check {
+      flex-shrink: 0;
+      margin: 0;
+      cursor: pointer;
+      accent-color: var(--accent, #1c7ed6);
     }
 
     .outline-panel__list button {
@@ -2199,6 +2209,11 @@
     .outline-panel__list li.is-current button {
       font-weight: 700;
       color: var(--accent, #1c7ed6);
+    }
+
+    .outline-panel__list li.is-hidden button {
+      color: #aab2be;
+      text-decoration: line-through;
     }
 
     .split-toggle {
@@ -2581,7 +2596,8 @@
       showDurationBar: false,
       showGlobalDurationBar: false,
       overviewOpen: false,
-      trainMapHeight: null
+      trainMapHeight: null,
+      hiddenSections: new Set()
     };
 
     const appEl = document.querySelector(".app");
@@ -2955,6 +2971,7 @@
     }
 
     function buildGrid() {
+      state.hiddenSections = new Set();
       if (!state.slides.length) { state.grid = []; state.col = 0; state.row = 0; return; }
       const columns = [];
       let col = [];
@@ -3887,7 +3904,7 @@
         slideEl.innerHTML = `
           <div class="empty">
             <div>
-              <strong>First, choose the slide delimiters used in your Markdown, then import or drag &amp; drop a Markdown file.</strong>
+              <strong>First, choose the slide delimiters used in your Markdown, then import or drag &amp; drop a Markdown file — or load it from a URL (GitHub, GitLab, Bitbucket, Obsidian Publish…). Use the Plan panel to hide sections from navigation.</strong>
               <div class="empty-flow">
                 <button
                   class="empty-step"
@@ -3996,34 +4013,48 @@
       slideEl.classList.toggle("is-tall", contentHeight > availableHeight);
     }
 
+    function nextVisibleCol(from) {
+      for (let c = from + 1; c < state.grid.length; c++) {
+        if (!state.hiddenSections.has(c)) return c;
+      }
+      return -1;
+    }
+
+    function prevVisibleCol(from) {
+      for (let c = from - 1; c >= 0; c--) {
+        if (!state.hiddenSections.has(c)) return c;
+      }
+      return -1;
+    }
+
     function goNext() {
       if (!state.grid.length) { if (state.index < state.slides.length - 1) { state.index++; renderSlide(); } return; }
       const col = state.grid[state.col];
       if (state.row < col.length - 1) state.row++;
-      else if (state.col < state.grid.length - 1) { state.col++; state.row = 0; }
-      else return;
+      else { const nc = nextVisibleCol(state.col); if (nc === -1) return; state.col = nc; state.row = 0; }
       syncIndexFromGrid(); renderSlide();
     }
 
     function goPrev() {
       if (!state.grid.length) { if (state.index > 0) { state.index--; renderSlide(); } return; }
       if (state.row > 0) state.row--;
-      else if (state.col > 0) { state.col--; state.row = state.grid[state.col].length - 1; }
-      else return;
+      else { const pc = prevVisibleCol(state.col); if (pc === -1) return; state.col = pc; state.row = state.grid[pc].length - 1; }
       syncIndexFromGrid(); renderSlide();
     }
 
     function goRight() {
-      if (!state.grid.length || state.col >= state.grid.length - 1) return;
-      state.col++;
-      state.row = 0;
+      if (!state.grid.length) return;
+      const nc = nextVisibleCol(state.col);
+      if (nc === -1) return;
+      state.col = nc; state.row = 0;
       syncIndexFromGrid(); renderSlide();
     }
 
     function goLeft() {
-      if (!state.grid.length || state.col <= 0) return;
-      state.col--;
-      state.row = 0;
+      if (!state.grid.length) return;
+      const pc = prevVisibleCol(state.col);
+      if (pc === -1) return;
+      state.col = pc; state.row = 0;
       syncIndexFromGrid(); renderSlide();
     }
 
@@ -4856,24 +4887,43 @@
     function buildOutline() {
       if (!outlineListEl) return;
       outlineListEl.innerHTML = "";
+      if (!state.grid.length) return;
       const _tmp = document.createElement("div");
-      let displayIndex = 0;
-      state.slides.forEach((slide, i) => {
-        const m = slide.html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-        if (!m) return;
-        _tmp.innerHTML = m[1].replace(/<[^>]+>/g, "");
-        const title = _tmp.textContent.replace(/\s+/g, " ").trim();
+      state.grid.forEach((colSlides, colIdx) => {
+        let title = "";
+        let jumpIdx = colSlides[0];
+        for (const si of colSlides) {
+          const m = state.slides[si]?.html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+          if (m) {
+            _tmp.innerHTML = m[1].replace(/<[^>]+>/g, "");
+            title = _tmp.textContent.replace(/\s+/g, " ").trim();
+            jumpIdx = si;
+            break;
+          }
+        }
         if (!title) return;
-        displayIndex++;
+        const isHidden = state.hiddenSections.has(colIdx);
         const li = document.createElement("li");
-        if (i === state.index) li.classList.add("is-current");
+        if (colSlides.includes(state.index)) li.classList.add("is-current");
+        if (isHidden) li.classList.add("is-hidden");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = !isHidden;
+        checkbox.className = "outline-panel__check";
+        checkbox.setAttribute("aria-label", (isHidden ? "Show " : "Hide ") + title);
+        checkbox.addEventListener("change", () => {
+          if (checkbox.checked) state.hiddenSections.delete(colIdx);
+          else state.hiddenSections.add(colIdx);
+          buildOutline();
+        });
         const btn = document.createElement("button");
         btn.textContent = title;
         btn.addEventListener("click", () => {
-          state.index = i;
+          state.index = jumpIdx;
           renderSlide();
           setOutlinePanelOpen(false);
         });
+        li.appendChild(checkbox);
         li.appendChild(btn);
         outlineListEl.appendChild(li);
       });
