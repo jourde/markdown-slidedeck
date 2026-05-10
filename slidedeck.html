@@ -877,6 +877,40 @@
       line-height: 1;
     }
 
+    .help-toggle {
+      position: fixed;
+      right: 16px;
+      bottom: 66px;
+      border: 0;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #2e3c54;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(21, 34, 54, 0.14);
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+
+    .help-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(21, 34, 54, 0.18);
+    }
+
+    .help-toggle:focus-visible {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .help-toggle .material-symbols-outlined {
+      font-size: 24px;
+      line-height: 1;
+    }
+
     /* ── Floating panels ── */
     .settings-panel,
     .zoom-panel {
@@ -2486,6 +2520,9 @@
   <button id="settingsToggle" class="settings-toggle" type="button" aria-label="Interface settings" title="Interface settings" aria-controls="settingsPanel" aria-expanded="false">
     <span class="material-symbols-outlined" aria-hidden="true">tune</span>
   </button>
+  <button id="helpToggle" class="help-toggle" type="button" aria-label="Open user guide" title="User guide">
+    <span class="material-symbols-outlined" aria-hidden="true">help</span>
+  </button>
   <button id="prevArrow" class="nav-arrow left" type="button" aria-label="Previous slide" hidden>
     <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
   </button>
@@ -2585,6 +2622,7 @@
     const delimiterApplyEl = document.getElementById("delimiterApply");
     const delimiterGuideEl = document.getElementById("delimiterGuide");
     const exportToggleEl = document.getElementById("exportToggle");
+    const helpToggleEl = document.getElementById("helpToggle");
     const fullscreenToggleEl = document.getElementById("fullscreenToggle");
     const zoomToggleEl = document.getElementById("zoomToggle");
     const zoomPanelEl = document.getElementById("zoomPanel");
@@ -4294,6 +4332,7 @@
       trainMapEl.innerHTML = "";
 
       if (exportToggleEl) exportToggleEl.hidden = !state.slides.length;
+      if (helpToggleEl) helpToggleEl.hidden = !!state.slides.length;
 
       if (!state.slides.length) {
         state.showTrainMap = false;
@@ -4738,6 +4777,10 @@
     settingsToggleEl?.addEventListener("click", () => {
       setZoomPanelOpen(false);
       setSettingsPanelOpen(settingsPanelEl.hidden, settingsToggleEl);
+    });
+
+    document.getElementById("helpToggle")?.addEventListener("click", () => {
+      window.open("https://jourde.github.io/markdown-slidedeck/how-to-use.html", "_blank", "noopener,noreferrer");
     });
 
     settingsPanelEl?.addEventListener("click", (e) => {
