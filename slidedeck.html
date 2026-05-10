@@ -1796,6 +1796,17 @@
       padding: 8px;
     }
 
+    .empty.drag-over {
+      outline: 3px dashed #1c7ed6;
+      outline-offset: -3px;
+      border-radius: 8px;
+      background: #e8f3fd;
+    }
+
+    .empty.drag-over .empty-flow {
+      pointer-events: none;
+    }
+
     .empty-step {
       min-width: 180px;
       border: 1px solid #bacbe2;
@@ -3895,7 +3906,7 @@
                 <button class="empty-step primary" type="button" data-action="upload" aria-label="Import markdown file" title="Import markdown file">
                   <span class="empty-step-index">2</span>
                   <span class="material-symbols-outlined">upload_file</span>
-                  <span>Import MD file</span>
+                  <span>Import MD file<br><small>or drag &amp; drop</small></span>
                 </button>
                 <span class="empty-flow-arrow">or</span>
                 <button class="empty-step" type="button" data-action="url-load-toggle" aria-label="Load from URL" title="Load from URL">
@@ -3906,6 +3917,24 @@
             </div>
           </div>
         `;
+        const emptyEl = slideEl.querySelector(".empty");
+        if (emptyEl) {
+          emptyEl.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            emptyEl.classList.add("drag-over");
+          });
+          emptyEl.addEventListener("dragleave", (e) => {
+            if (!emptyEl.contains(e.relatedTarget)) {
+              emptyEl.classList.remove("drag-over");
+            }
+          });
+          emptyEl.addEventListener("drop", (e) => {
+            e.preventDefault();
+            emptyEl.classList.remove("drag-over");
+            const file = e.dataTransfer.files?.[0];
+            if (file) loadFile(file);
+          });
+        }
         renderTrainMap();
         renderDurationBar();
         renderNavArrows();
@@ -4427,12 +4456,7 @@
       updateSlideAlignment();
     }
 
-    function handleUpload(event) {
-      const file = event.target.files?.[0];
-      if (!file) {
-        return;
-      }
-
+    function loadFile(file) {
       const reader = new FileReader();
       reader.onload = () => {
         const text = String(reader.result || "");
@@ -4452,6 +4476,12 @@
         renderSlide();
       };
       reader.readAsText(file);
+    }
+
+    function handleUpload(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      loadFile(file);
       event.target.value = "";
     }
 
