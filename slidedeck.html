@@ -139,8 +139,17 @@
       fill: currentColor;
     }
 
-    .slide {
+    .slide-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
       width: min(1280px, 100%);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slide {
+      width: 100%;
       flex: 1;
       min-height: 0;
       overflow: auto;
@@ -169,17 +178,24 @@
     .train-map {
       --station-size: 22px;
       --station-center-y: 22px;
-      width: min(1100px, 100%);
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
       height: 82px;
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
       padding: 12px 22px 8px;
+      background: linear-gradient(to top, rgba(255,255,255,0.97) 55%, rgba(255,255,255,0));
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease;
     }
 
     .app.train-visible .train-map {
-      display: flex;
+      opacity: 1;
+      pointer-events: auto;
     }
 
     .train-track {
@@ -433,14 +449,40 @@
       pointer-events: none;
     }
 
+    .train-resize-handle {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 10px;
+      cursor: ns-resize;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .train-resize-handle::before {
+      content: '';
+      width: 28px;
+      height: 3px;
+      border-radius: 2px;
+      background: rgba(0, 0, 0, 0.12);
+      transition: background 150ms ease;
+    }
+
+    .train-resize-handle:hover::before {
+      background: rgba(28, 126, 214, 0.5);
+    }
+
     .train-map.is-2d {
-      height: auto;
       min-height: 80px;
-      max-height: 160px;
       overflow-x: auto;
+      overflow-y: auto;
       align-items: flex-start;
       justify-content: flex-start;
-      padding: 10px 16px;
+      padding: 18px 16px 10px;
+      background: rgba(255, 255, 255, 0.97);
     }
 
     .train-grid {
@@ -2203,7 +2245,11 @@
       min-width: 0;
     }
 
-    .app.split-view #trainMap,
+    .app.split-view #trainMap {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
     .app.split-view #durationBar {
       display: none !important;
     }
@@ -2358,8 +2404,10 @@
       <textarea id="editorTextarea" spellcheck="false" placeholder="Load a Markdown file to edit it here…"></textarea>
       <div id="editorStatus" class="editor-status" aria-live="polite"></div>
     </section>
-    <article id="slide" class="slide" aria-live="polite" aria-atomic="true" role="region" aria-label="Slide content" tabindex="-1"></article>
-    <nav id="trainMap" class="train-map" aria-label="Slide train map"></nav>
+    <div class="slide-wrap">
+      <article id="slide" class="slide" aria-live="polite" aria-atomic="true" role="region" aria-label="Slide content" tabindex="-1"></article>
+      <nav id="trainMap" class="train-map" aria-label="Slide train map"></nav>
+    </div>
     <div id="durationBar" class="duration-bar" hidden></div>
     <footer class="app-footer">
       <a class="repo-link" href="https://github.com/jourde/markdown-html-slidedeck" target="_blank" rel="noopener noreferrer">View on GitHub</a>
@@ -2517,7 +2565,8 @@
       slideStartedAt: 0,
       showDurationBar: false,
       showGlobalDurationBar: false,
-      overviewOpen: false
+      overviewOpen: false,
+      trainMapHeight: null
     };
 
     const appEl = document.querySelector(".app");
@@ -4262,6 +4311,37 @@
       const is2D = state.grid.length > 1;
       trainMapEl.classList.toggle("is-2d", is2D);
       trainMapEl.classList.toggle("has-durations", !is2D && state.slides.some(s => s.duration != null));
+
+      if (state.trainMapHeight != null) {
+        trainMapEl.style.height = state.trainMapHeight + "px";
+      } else if (is2D) {
+        state.trainMapHeight = 160;
+        trainMapEl.style.height = "160px";
+      } else {
+        trainMapEl.style.height = "";
+      }
+
+      const handle = document.createElement("div");
+      handle.className = "train-resize-handle";
+      handle.setAttribute("aria-label", "Drag to resize route map");
+      handle.title = "Drag to resize";
+      trainMapEl.appendChild(handle);
+
+      let dragStartY, dragStartHeight;
+      handle.addEventListener("pointerdown", e => {
+        e.preventDefault();
+        dragStartY = e.clientY;
+        dragStartHeight = trainMapEl.offsetHeight;
+        handle.setPointerCapture(e.pointerId);
+      });
+      handle.addEventListener("pointermove", e => {
+        if (!handle.hasPointerCapture(e.pointerId)) return;
+        const delta = dragStartY - e.clientY;
+        const maxH = Math.floor(slideEl.clientHeight * 0.75);
+        const newH = Math.max(60, Math.min(maxH, dragStartHeight + delta));
+        trainMapEl.style.height = newH + "px";
+        state.trainMapHeight = newH;
+      });
 
       if (!is2D) {
         renderTrainMapLinear();
