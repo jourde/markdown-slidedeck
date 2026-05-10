@@ -2139,7 +2139,7 @@
       position: fixed;
       left: 0;
       top: 0;
-      z-index: 200;
+      z-index: 220;
       display: flex;
       flex-direction: column;
       gap: 0;
@@ -2160,13 +2160,48 @@
       display: none;
     }
 
+    .outline-panel__toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
     .outline-panel__heading {
-      margin: 0 0 8px;
+      margin: 0;
       font-size: 0.78rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.07em;
       color: #49586f;
+    }
+
+    .outline-panel__levels {
+      display: flex;
+      gap: 2px;
+    }
+
+    .outline-panel__level {
+      background: none;
+      border: 1px solid #d5deeb;
+      border-radius: 5px;
+      padding: 2px 7px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #49586f;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 100ms, color 100ms;
+    }
+
+    .outline-panel__level:hover {
+      background: #f0f4fa;
+    }
+
+    .outline-panel__level.active {
+      background: #1c7ed6;
+      border-color: #1c7ed6;
+      color: #fff;
     }
 
     .outline-panel__list {
@@ -2567,7 +2602,14 @@
     </div>
   </section>
   <section id="outlinePanel" class="outline-panel" role="region" aria-label="Plan / Outline" hidden>
-    <h2 class="outline-panel__heading">Plan</h2>
+    <div class="outline-panel__toolbar">
+      <h2 class="outline-panel__heading">Plan</h2>
+      <div class="outline-panel__levels" id="outlineLevels">
+        <button class="outline-panel__level active" data-level="1">H1</button>
+        <button class="outline-panel__level" data-level="2">H2</button>
+        <button class="outline-panel__level" data-level="3">H3</button>
+      </div>
+    </div>
     <ol class="outline-panel__list" id="outlineList"></ol>
   </section>
   <section id="urlLoadPanel" class="url-load-panel" role="region" aria-label="Load Markdown from URL" hidden>
@@ -2660,6 +2702,8 @@
     const outlineToggleEl = document.getElementById("outlineToggle");
     const outlinePanelEl  = document.getElementById("outlinePanel");
     const outlineListEl   = document.getElementById("outlineList");
+    const outlineLevelsEl = document.getElementById("outlineLevels");
+    let outlineMaxLevel = 1;
     const srStatusEl = document.getElementById("srStatus");
     const urlLoadPanelEl = document.getElementById("urlLoadPanel");
     const urlLoadInputEl = document.getElementById("urlLoadInput");
@@ -3936,7 +3980,7 @@
         slideEl.innerHTML = `
           <div class="empty">
             <div>
-              <strong>First, choose the slide delimiters used in your Markdown, then import or drag &amp; drop a Markdown file — or load it from a URL (GitHub, GitLab, Bitbucket, Obsidian Publish…). Use the Plan panel to hide any heading from navigation, or add -- at the end of a heading (H1–H6) to skip it by default.</strong>
+              <strong>A minimal, distraction-free presentation tool. Write slides in plain Markdown — no plugins, no accounts, no internet required.</strong>
               <div class="empty-flow">
                 <button
                   class="empty-step"
@@ -4938,16 +4982,35 @@
     // ── Outline / Plan panel ──────────────────────────────────────────────
     let outlineAnchorEl = null;
 
+    if (outlineLevelsEl) {
+      outlineLevelsEl.addEventListener("click", e => {
+        const btn = e.target.closest(".outline-panel__level");
+        if (!btn) return;
+        outlineMaxLevel = parseInt(btn.dataset.level);
+        outlineLevelsEl.querySelectorAll(".outline-panel__level").forEach(b => {
+          b.classList.toggle("active", parseInt(b.dataset.level) <= outlineMaxLevel);
+        });
+        buildOutline();
+      });
+    }
+
     function positionOutlinePanel(anchorEl) {
       if (!outlinePanelEl || !anchorEl || outlinePanelEl.hidden) return;
       const rect = anchorEl.getBoundingClientRect();
       const panelRect = outlinePanelEl.getBoundingClientRect();
       const margin = 12;
-      const gap = 10;
+      const gap = 8;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+
       let top = rect.top - panelRect.height - gap;
       if (top < margin) top = rect.bottom + gap;
+      top = Math.max(margin, Math.min(top, vh - panelRect.height - margin));
+
       let left = rect.right - panelRect.width;
-      if (left < margin) left = margin;
+      left = Math.max(margin, Math.min(left, vw - panelRect.width - margin));
+
+      outlinePanelEl.style.maxHeight = `${vh - top - margin}px`;
       outlinePanelEl.style.top  = `${top}px`;
       outlinePanelEl.style.left = `${left}px`;
     }
@@ -4958,9 +5021,10 @@
       if (!state.grid.length) return;
       const _tmp = document.createElement("div");
 
-      function makeItem(title, slideIdx, isHidden, isCurrent, subitem, onToggle) {
+      function makeItem(title, slideIdx, isHidden, isCurrent, level, onToggle) {
         const li = document.createElement("li");
-        if (subitem) li.className = "outline-panel__subitem";
+        if (level > 1) li.className = "outline-panel__subitem";
+        if (level > 1) li.style.paddingLeft = `${(level - 1) * 16}px`;
         if (isCurrent) li.classList.add("is-current");
         if (isHidden) li.classList.add("is-hidden");
         const checkbox = document.createElement("input");
@@ -4992,18 +5056,20 @@
         if (!colTitle) return;
         outlineListEl.appendChild(makeItem(
           colTitle, colJumpIdx, state.hiddenSections.has(colIdx),
-          colSlides.includes(state.index), false,
+          colSlides.includes(state.index), 1,
           checked => checked ? state.hiddenSections.delete(colIdx) : state.hiddenSections.add(colIdx)
         ));
         colSlides.slice(1).forEach(si => {
           const m = state.slides[si]?.html.match(/<h([2-6])[^>]*>([\s\S]*?)<\/h\1>/i);
           if (!m) return;
+          const level = parseInt(m[1]);
+          if (level > outlineMaxLevel) return;
           _tmp.innerHTML = m[2].replace(/<[^>]+>/g, "");
           const subTitle = _tmp.textContent.replace(/\s+/g, " ").trim();
           if (!subTitle) return;
           outlineListEl.appendChild(makeItem(
             subTitle, si, state.hiddenSlides.has(si),
-            si === state.index, true,
+            si === state.index, level,
             checked => checked ? state.hiddenSlides.delete(si) : state.hiddenSlides.add(si)
           ));
         });
