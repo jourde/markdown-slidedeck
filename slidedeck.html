@@ -741,40 +741,6 @@
       line-height: 1;
     }
 
-    .export-toggle {
-      position: fixed;
-      right: 16px;
-      bottom: 66px;
-      border: 0;
-      border-radius: 999px;
-      background: #ffffff;
-      color: #2e3c54;
-      width: 44px;
-      height: 44px;
-      padding: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 8px 20px rgba(21, 34, 54, 0.14);
-      transition: transform 120ms ease, box-shadow 120ms ease;
-    }
-
-    .export-toggle:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 22px rgba(21, 34, 54, 0.18);
-    }
-
-    .export-toggle:focus-visible {
-      outline: 3px solid var(--focus-ring);
-      outline-offset: 2px;
-    }
-
-    .export-toggle .material-symbols-outlined {
-      font-size: 24px;
-      line-height: 1;
-    }
-
     .fullscreen-toggle {
       position: fixed;
       right: 16px;
@@ -909,6 +875,10 @@
     .help-toggle .material-symbols-outlined {
       font-size: 24px;
       line-height: 1;
+    }
+
+    .help-toggle[hidden] {
+      display: none;
     }
 
     /* ── Floating panels ── */
@@ -2508,9 +2478,6 @@
   <button id="splitToggle" class="split-toggle" type="button" aria-label="Toggle split editor" title="Toggle split editor" aria-pressed="false">
     <span class="material-symbols-outlined" aria-hidden="true">vertical_split</span>
   </button>
-  <button id="exportToggle" class="export-toggle" type="button" aria-label="Export as HTML" title="Export as HTML" hidden>
-    <span class="material-symbols-outlined" aria-hidden="true">download</span>
-  </button>
   <button id="fullscreenToggle" class="fullscreen-toggle" type="button" aria-label="Enter fullscreen" title="Enter fullscreen (F)">
     <span class="material-symbols-outlined" aria-hidden="true">fullscreen</span>
   </button>
@@ -2621,7 +2588,6 @@
     const notesDelimiterInputEl = document.getElementById("notesDelimiterInput");
     const delimiterApplyEl = document.getElementById("delimiterApply");
     const delimiterGuideEl = document.getElementById("delimiterGuide");
-    const exportToggleEl = document.getElementById("exportToggle");
     const helpToggleEl = document.getElementById("helpToggle");
     const fullscreenToggleEl = document.getElementById("fullscreenToggle");
     const zoomToggleEl = document.getElementById("zoomToggle");
@@ -4331,9 +4297,6 @@
     function renderTrainMap() {
       trainMapEl.innerHTML = "";
 
-      if (exportToggleEl) exportToggleEl.hidden = !state.slides.length;
-      if (helpToggleEl) helpToggleEl.hidden = !!state.slides.length;
-
       if (!state.slides.length) {
         state.showTrainMap = false;
         appEl.classList.remove("train-visible");
@@ -4903,125 +4866,6 @@
       if (e.key === "Enter") loadFromUrl(urlLoadInputEl.value);
       if (e.key === "Escape") setUrlLoadPanelOpen(false);
     });
-    // ─────────────────────────────────────────────────────────────────────
-
-    // ── Export to HTML ─────────────────────────────────────────────────────
-    function exportHTML() {
-      if (!state.sourceMarkdown) return;
-
-      const title = (state.frontmatter && state.frontmatter.title)
-        ? state.frontmatter.title
-        : "export";
-
-      const { content } = extractFrontmatter(state.sourceMarkdown);
-      const bodyHtml = markdownToHtml(applyObsidianSyntax(content));
-
-      const safeTitle = escapeHtml(title);
-      const fullHtml = `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${safeTitle}</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body {
-      margin: 0;
-      padding: 48px clamp(20px, 8vw, 80px);
-      font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-      font-size: 1rem;
-      line-height: 1.7;
-      color: #1e2430;
-      background: #ffffff;
-      max-width: 900px;
-      margin-inline: auto;
-    }
-    h1, h2, h3, h4, h5, h6 {
-      line-height: 1.25;
-      margin: 1.8em 0 0.5em;
-      font-weight: 700;
-      color: #111827;
-    }
-    h1 { font-size: 2rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.3em; }
-    h2 { font-size: 1.5rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.2em; }
-    h3 { font-size: 1.25rem; }
-    p { margin: 0.75em 0; }
-    a { color: #1c7ed6; text-underline-offset: 0.15em; }
-    a:hover { color: #176ab5; }
-    img { max-width: 100%; height: auto; border-radius: 6px; }
-    blockquote {
-      margin: 1.2em 0;
-      padding: 0.6em 1.2em;
-      border-left: 4px solid #1c7ed6;
-      background: #f0f6ff;
-      color: #374151;
-      border-radius: 0 6px 6px 0;
-    }
-    blockquote p { margin: 0; }
-    pre {
-      background: #1e2430;
-      color: #e2e8f0;
-      padding: 1.2em 1.4em;
-      border-radius: 8px;
-      overflow-x: auto;
-      font-size: 0.875rem;
-      line-height: 1.6;
-    }
-    code {
-      font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
-    }
-    p code, li code {
-      background: #f1f5f9;
-      color: #be185d;
-      padding: 0.15em 0.35em;
-      border-radius: 4px;
-      font-size: 0.875em;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin: 1.2em 0;
-      font-size: 0.95rem;
-    }
-    th, td {
-      border: 1px solid #d1d5db;
-      padding: 0.5em 0.8em;
-      text-align: left;
-    }
-    th { background: #f8fafc; font-weight: 600; }
-    tr:nth-child(even) td { background: #f8fafc; }
-    ul, ol { padding-left: 1.6em; margin: 0.75em 0; }
-    li { margin: 0.3em 0; }
-    hr {
-      border: none;
-      border-top: 2px solid #e5e7eb;
-      margin: 2.5em 0;
-    }
-    mark {
-      background: #fff1bf;
-      color: inherit;
-      padding: 0 0.12em;
-      border-radius: 3px;
-    }
-  </style>
-</head>
-<body>
-${bodyHtml}
-</body>
-</html>`;
-
-      const blob = new Blob([fullHtml], { type: "text/html;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = title.replace(/[^a-zA-Z0-9_\- ]/g, "_").trim() + ".html";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), BLOB_REVOKE_MS);
-    }
-
-    exportToggleEl?.addEventListener("click", exportHTML);
     // ─────────────────────────────────────────────────────────────────────
 
     // ── Split-view editor ────────────────────────────────────────────────
