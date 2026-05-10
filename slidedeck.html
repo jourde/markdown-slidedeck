@@ -3887,7 +3887,7 @@
         slideEl.innerHTML = `
           <div class="empty">
             <div>
-              <strong>First, choose the slide delimiters used in your Markdown, then import the Markdown file.</strong>
+              <strong>First, choose the slide delimiters used in your Markdown, then import or drag &amp; drop a Markdown file.</strong>
               <div class="empty-flow">
                 <button
                   class="empty-step"
@@ -4485,6 +4485,25 @@
       event.target.value = "";
     }
 
+    async function resolveObsidianPublishUrl(url) {
+      const parsed = new URL(url);
+      const parts = parsed.pathname.replace(/^\//, "").split("/");
+      const siteSlug = parts[0];
+      const pathSegments = parts.slice(1);
+
+      const pageHtml = await (await fetch(`https://publish.obsidian.md/${siteSlug}/`)).text();
+      const uidMatch = pageHtml.match(/["']uid["']\s*:\s*["']([a-f0-9]{32})["']/);
+      if (!uidMatch) throw new Error("Could not find Obsidian Publish site UID.");
+      const uid = uidMatch[1];
+
+      const encodedPath = pathSegments
+        .map(seg => encodeURIComponent(decodeURIComponent(seg.replace(/\+/g, " "))))
+        .join("/");
+      const withExt = encodedPath.endsWith(".md") ? encodedPath : encodedPath + ".md";
+
+      return `https://publish-01.obsidian.md/access/${uid}/${withExt}`;
+    }
+
     function setUrlLoadPanelOpen(open) {
       if (!urlLoadPanelEl) return;
       urlLoadPanelEl.hidden = !open;
@@ -4516,13 +4535,16 @@
       }
       if (urlLoadErrorEl) urlLoadErrorEl.hidden = true;
       try {
-        const fetchUrl = /^https:\/\/github\.com\/[^/]+\/[^/]+\/blob\//.test(trimmed)
+        let fetchUrl = /^https:\/\/github\.com\/[^/]+\/[^/]+\/blob\//.test(trimmed)
           ? trimmed.replace('https://github.com/', 'https://raw.githubusercontent.com/').replace('/blob/', '/')
           : /^https:\/\/gitlab\.com\/.+\/-\/blob\//.test(trimmed)
           ? trimmed.replace('/-/blob/', '/-/raw/')
           : /^https:\/\/bitbucket\.org\/[^/]+\/[^/]+\/src\//.test(trimmed)
           ? trimmed.replace('/src/', '/raw/')
           : trimmed;
+        if (/^https:\/\/publish\.obsidian\.md\//.test(trimmed)) {
+          fetchUrl = await resolveObsidianPublishUrl(trimmed);
+        }
         const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const text = await response.text();
