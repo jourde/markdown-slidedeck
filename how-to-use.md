@@ -3,6 +3,13 @@
 A minimal, distraction-free presentation tool.
 Write slides in plain Markdown — no plugins, no accounts, no internet required.
 
+**Navigate:** `→` next section · `↓` sub-slide · `Space` next slide
+
+-- duration: 30s
+Everything stays local in your browser. Nothing is uploaded anywhere.
+
+---
+
 ## Getting Started
 
 1. Click **Choose delimiters** to confirm how your slides are separated
@@ -11,8 +18,7 @@ Write slides in plain Markdown — no plugins, no accounts, no internet required
 
 That's it. Your presentation is ready.
 
--- duration: 60s
-Everything stays local in your browser. Nothing is uploaded anywhere.
+-- duration: 45s
 The app parses your Markdown file entirely in the browser using the marked.js library.
 
 ---
