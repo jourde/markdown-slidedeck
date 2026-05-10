@@ -2535,13 +2535,13 @@
   </section>
   <div id="srStatus" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,600,0,0" />
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,600,0,0" crossorigin="anonymous" />
+  <script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
   <script>
     const state = {
       slides: [],
@@ -2643,6 +2643,9 @@
     const ZOOM_LEVELS = [0.8, 0.9, 1, 1.1, 1.25, 1.5];
     const SETTINGS_DEFAULTS = { bg: "cloud", font: "sans", zoom: 1 };
     const SETTINGS_KEY = "slidedeckSettings";
+    const EDITOR_DEBOUNCE_MS = 400;
+    const BLOB_REVOKE_MS = 1000;
+    const QR_DEFAULT_SIZE = 200;
     const appSettings = { ...SETTINGS_DEFAULTS };
     let delimiterAnchorEl = null;
     let zoomAnchorEl = null;
@@ -2652,7 +2655,7 @@
         return;
       }
       srStatusEl.textContent = "";
-      window.requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
         srStatusEl.textContent = message;
       });
     }
@@ -2685,7 +2688,7 @@
     if (window.mermaid) {
       window.mermaid.initialize({
         startOnLoad: false,
-        securityLevel: "loose",
+        securityLevel: "antiscript",
         theme: "default"
       });
     }
@@ -3438,7 +3441,9 @@
           font: appSettings.font,
           zoom: appSettings.zoom
         }));
-      } catch (_) {}
+      } catch (err) {
+        console.warn("Settings save error:", err);
+      }
     }
 
     function loadSettings() {
@@ -3450,7 +3455,9 @@
           if (parsed.font && FONT_PRESETS[parsed.font]) appSettings.font = parsed.font;
           if (typeof parsed.zoom === "number") appSettings.zoom = clampZoomLevel(parsed.zoom);
         }
-      } catch (_) {}
+      } catch (err) {
+        console.warn("Settings load error:", err);
+      }
       applySettings(appSettings);
     }
 
@@ -3826,7 +3833,7 @@
           return;
         }
         const sizeMatch = (img.getAttribute("alt") || "").match(/\d+/);
-        const size = sizeMatch ? parseInt(sizeMatch[0], 10) : (parseInt(img.getAttribute("width") || "0", 10) || 200);
+        const size = sizeMatch ? parseInt(sizeMatch[0], 10) : (parseInt(img.getAttribute("width") || "0", 10) || QR_DEFAULT_SIZE);
         const wrapper = document.createElement("div");
         wrapper.className = "qr-code-generated";
         img.replaceWith(wrapper);
@@ -3844,7 +3851,7 @@
         if (!url || div.querySelector("canvas, img")) {
           return;
         }
-        const size = parseInt(div.getAttribute("data-size") || "200", 10);
+        const size = parseInt(div.getAttribute("data-size") || String(QR_DEFAULT_SIZE), 10);
         new window.QRCode(div, {
           text: url,
           width: size,
@@ -3976,14 +3983,14 @@
     function goRight() {
       if (!state.grid.length || state.col >= state.grid.length - 1) return;
       state.col++;
-      state.row = Math.min(state.row, state.grid[state.col].length - 1);
+      state.row = 0;
       syncIndexFromGrid(); renderSlide();
     }
 
     function goLeft() {
       if (!state.grid.length || state.col <= 0) return;
       state.col--;
-      state.row = Math.min(state.row, state.grid[state.col].length - 1);
+      state.row = 0;
       syncIndexFromGrid(); renderSlide();
     }
 
@@ -4291,16 +4298,20 @@
       if (!state.slides.length) {
         state.showTrainMap = false;
         appEl.classList.remove("train-visible");
-        mapToggleEl.disabled = true;
-        mapToggleEl.setAttribute("aria-pressed", "false");
-        mapToggleEl.setAttribute("aria-expanded", "false");
+        if (mapToggleEl) {
+          mapToggleEl.disabled = true;
+          mapToggleEl.setAttribute("aria-pressed", "false");
+          mapToggleEl.setAttribute("aria-expanded", "false");
+        }
         trainMapEl.setAttribute("aria-hidden", "true");
         return;
       }
 
-      mapToggleEl.disabled = false;
-      mapToggleEl.setAttribute("aria-pressed", String(state.showTrainMap));
-      mapToggleEl.setAttribute("aria-expanded", String(state.showTrainMap));
+      if (mapToggleEl) {
+        mapToggleEl.disabled = false;
+        mapToggleEl.setAttribute("aria-pressed", String(state.showTrainMap));
+        mapToggleEl.setAttribute("aria-expanded", String(state.showTrainMap));
+      }
       trainMapEl.setAttribute("aria-hidden", String(!state.showTrainMap));
       appEl.classList.toggle("train-visible", state.showTrainMap);
       if (!state.showTrainMap) {
@@ -4454,7 +4465,13 @@
     async function loadFromUrl(url) {
       const trimmed = String(url || "").trim();
       if (!trimmed) return;
-      if (!trimmed.startsWith("http")) {
+      let parsedUrl;
+      try {
+        parsedUrl = new URL(trimmed);
+      } catch {
+        parsedUrl = null;
+      }
+      if (!parsedUrl || !["http:", "https:"].includes(parsedUrl.protocol)) {
         if (urlLoadErrorEl) {
           urlLoadErrorEl.textContent = "Please enter a valid http(s) URL.";
           urlLoadErrorEl.hidden = false;
@@ -4958,7 +4975,7 @@ ${bodyHtml}
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      setTimeout(() => URL.revokeObjectURL(url), BLOB_REVOKE_MS);
     }
 
     exportToggleEl?.addEventListener("click", exportHTML);
@@ -5004,7 +5021,7 @@ ${bodyHtml}
         syncGridFromIndex();
         renderSlide();
         updateEditorStatus();
-      }, 400);
+      }, EDITOR_DEBOUNCE_MS);
     });
 
     editorDownloadEl?.addEventListener("click", () => {
@@ -5021,7 +5038,7 @@ ${bodyHtml}
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      setTimeout(() => URL.revokeObjectURL(url), BLOB_REVOKE_MS);
     });
 
     splitToggleEl?.addEventListener("click", toggleSplitView);
