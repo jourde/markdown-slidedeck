@@ -8,4 +8,4 @@ Markdown Slide Deck is a lightweight, accessible single-page app that converts u
 
 --
 
-[How to use it](https://jourde.github.io/markdown-slidedeck/how-to-use.md).
+[How to use it](https://github.com/jourde/markdown-slidedeck/blob/main/how-to-use.md).
