@@ -210,7 +210,7 @@ Search is case-insensitive and works across slide content only — not speaker n
 Customise how the app looks and behaves during your presentation.
 
 -- duration: 15s
-This section covers fullscreen, zoom, the outline, and appearance settings.
+This section covers fullscreen, zoom, the outline, appearance settings, and the user guide.
 
 ---
 
@@ -271,12 +271,23 @@ All settings are stored in your browser's localStorage — they persist across r
 
 ---
 
-# Editing & Exporting
+## User Guide
 
-Author your deck inside the app and export it as a self-contained HTML file.
+Click the **help** (**?**) button on the right toolbar to open this guide in a new browser tab.
+
+The button is visible on the start screen — before any deck is loaded.
 
 -- duration: 15s
-This section covers the split-view editor and the HTML export feature.
+The guide opens at jourde.github.io/markdown-slidedeck/how-to-use.html.
+
+---
+
+# Editing
+
+Author your deck inside the app using the built-in editor.
+
+-- duration: 15s
+This section covers the split-view editor.
 
 ---
 
@@ -292,17 +303,6 @@ The split editor is useful for authoring and refining slides without switching a
 
 -- duration: 30s
 The editor shows the raw Markdown for the entire deck, not just the current slide.
-
----
-
-## Export as HTML
-
-Click the **download** button (visible once a deck is loaded) to export the current presentation as a self-contained HTML file.
-
-The exported file includes all slides, settings, and the app runtime — it can be opened in any browser without an internet connection.
-
--- duration: 20s
-The export captures your current background and font settings as defaults in the exported file.
 
 ---
 
@@ -492,7 +492,7 @@ All keyboard shortcuts work when focus is on the slide — not when a text input
 - Speaker notes are a great place for **talking points** and **statistics**
 - The `# H1` delimiter mode works well for existing Markdown documents and creates sections automatically
 - Imported files stay **local** — nothing is uploaded; URL-loaded files are fetched directly from their host
-- The **split editor** lets you author and preview at the same time — download the result when done
+- The **split editor** lets you author and preview at the same time — click **Download .md** to save your work
 - Use `O` during a presentation to jump to any slide instantly
 
 -- duration: 1m
