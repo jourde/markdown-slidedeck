@@ -4486,7 +4486,14 @@
       }
       if (urlLoadErrorEl) urlLoadErrorEl.hidden = true;
       try {
-        const response = await fetch(trimmed);
+        const fetchUrl = /^https:\/\/github\.com\/[^/]+\/[^/]+\/blob\//.test(trimmed)
+          ? trimmed.replace('https://github.com/', 'https://raw.githubusercontent.com/').replace('/blob/', '/')
+          : /^https:\/\/gitlab\.com\/.+\/-\/blob\//.test(trimmed)
+          ? trimmed.replace('/-/blob/', '/-/raw/')
+          : /^https:\/\/bitbucket\.org\/[^/]+\/[^/]+\/src\//.test(trimmed)
+          ? trimmed.replace('/src/', '/raw/')
+          : trimmed;
+        const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const text = await response.text();
         state.sourceMarkdown = text;
