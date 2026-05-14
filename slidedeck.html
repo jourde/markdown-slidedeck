@@ -1376,9 +1376,9 @@
       top: 50%;
       transform: translateY(-50%);
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
-      gap: 0;
+      gap: 4px;
       z-index: 40;
       pointer-events: none;
     }
@@ -1437,6 +1437,42 @@
     .vn-dot.active {
       background: var(--accent, #1c7ed6);
       border-color: var(--accent, #1c7ed6);
+    }
+
+    .vn-dots-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .vn-chevron {
+      appearance: none;
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      width: 14px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      pointer-events: all;
+      color: rgba(150, 170, 200, 0.6);
+      font-size: 10px;
+      line-height: 1;
+      transition: color 180ms ease;
+      flex-shrink: 0;
+    }
+
+    .vn-chevron:hover {
+      color: var(--accent, #1c7ed6);
+    }
+
+    .vn-chevron.hidden {
+      visibility: hidden;
+      pointer-events: none;
     }
 
     .search-panel {
@@ -4271,16 +4307,31 @@
 
       verticalNavEl.innerHTML = "";
 
+      // Chevron: previous chapter (left)
+      const prevChevron = document.createElement("button");
+      prevChevron.type = "button";
+      prevChevron.className = "vn-chevron" + (state.col > 0 ? "" : " hidden");
+      prevChevron.setAttribute("aria-label", "Previous chapter");
+      prevChevron.innerHTML = "&#10094;";
+      prevChevron.addEventListener("click", () => {
+        state.col--; state.row = 0;
+        syncIndexFromGrid(); renderSlide();
+      });
+      verticalNavEl.appendChild(prevChevron);
+
+      // Wrapper keeps track absolute within the dots zone only
+      const wrapper = document.createElement("div");
+      wrapper.className = "vn-dots-wrapper";
+
       // Track line behind dots
       const track = document.createElement("div");
       track.className = "vn-track";
       const fill = document.createElement("div");
       fill.className = "vn-fill";
-      // Fill height: fraction of track covered up to (and including) active dot
       const pct = col.length > 1 ? (state.row / (col.length - 1)) * 100 : 0;
       fill.style.height = pct + "%";
       track.appendChild(fill);
-      verticalNavEl.appendChild(track);
+      wrapper.appendChild(track);
 
       col.forEach((flatIdx, rowIdx) => {
         const dot = document.createElement("button");
@@ -4294,8 +4345,22 @@
           syncIndexFromGrid();
           renderSlide();
         });
-        verticalNavEl.appendChild(dot);
+        wrapper.appendChild(dot);
       });
+
+      verticalNavEl.appendChild(wrapper);
+
+      // Chevron: next chapter (right)
+      const nextChevron = document.createElement("button");
+      nextChevron.type = "button";
+      nextChevron.className = "vn-chevron" + (state.col < state.grid.length - 1 ? "" : " hidden");
+      nextChevron.setAttribute("aria-label", "Next chapter");
+      nextChevron.innerHTML = "&#10095;";
+      nextChevron.addEventListener("click", () => {
+        state.col++; state.row = 0;
+        syncIndexFromGrid(); renderSlide();
+      });
+      verticalNavEl.appendChild(nextChevron);
     }
 
     function renderNavArrows() {
