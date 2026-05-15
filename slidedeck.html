@@ -164,6 +164,28 @@
       align-items: center;
       justify-content: center;
       padding: clamp(10px, 2vw, 24px);
+      position: relative;
+    }
+
+    .slide-continue-hint {
+      position: fixed;
+      right: 68px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+      pointer-events: none;
+      z-index: 40;
+      animation: hint-nudge 2s ease-in-out infinite;
+    }
+
+    .slide-continue-hint .material-symbols-outlined {
+      font-size: 2.8rem;
+      display: block;
+    }
+
+    @keyframes hint-nudge {
+      0%, 100% { transform: translateY(-50%) translateX(0);   opacity: 0.55; }
+      50%       { transform: translateY(-50%) translateX(5px); opacity: 1;    }
     }
 
     .slide.is-tall .slide-center {
@@ -2808,6 +2830,20 @@
         renderer: {
           del({ tokens }) {
             return `<span style="text-decoration:line-through;text-decoration-thickness:1px;">${this.parser.parseInline(tokens)}</span>`;
+          },
+          image({ href, title, text }) {
+            const dimMatch = text && text.match(/^\|?(\d+)(?:x(\d+))?$/);
+            if (dimMatch) {
+              const [, w, h] = dimMatch;
+              const style = h
+                ? `width:${w}px;height:${h}px;object-fit:contain;`
+                : `width:${w}px;`;
+              const titleAttr = title ? ` title="${title}"` : "";
+              return `<img src="${href}"${titleAttr} style="${style}" alt="">`;
+            }
+            const altAttr = text ? ` alt="${text}"` : "";
+            const titleAttr = title ? ` title="${title}"` : "";
+            return `<img src="${href}"${altAttr}${titleAttr}>`;
           }
         }
       });
@@ -2950,6 +2986,15 @@
 
       // Obsidian comments
       text = text.replace(/%%[\s\S]*?%%/g, "");
+
+      // Image embeds: ![[image.png]] or ![[image.png|W]] or ![[image.png|WxH]]
+      text = text.replace(/!\[\[([^\]|]+?)(?:\|(\d+(?:x\d+)?))?\]\]/g, (_, filename, dim) => {
+        const src = filename.trim();
+        if (!dim) return `<img src="${src}" alt="${src.replace(/"/g, "&quot;")}">`;
+        const [w, h] = dim.split("x");
+        const style = h ? `width:${w}px;height:${h}px;object-fit:contain;` : `width:${w}px;`;
+        return `<img src="${src}" alt="" style="${style}">`;
+      });
 
       // Internal anchors: [[Note#Heading]] or [[#Heading]] (+ optional alias)
       text = text.replace(/\[\[(?:([^#\]|]+))?#([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, rawNote, rawHeading, rawAlias) => {
@@ -4101,6 +4146,22 @@
       renderDurationBar();
       renderNavArrows();
       renderVerticalNav();
+
+      // Chevron hint on title-only slides
+      const currentSlide = state.slides[state.index];
+      const isTitleOnly = /^#{1,6}\s+\S[^\n]*$/.test(currentSlide.content.trim());
+      const hasNext = state.index < state.slides.length - 1;
+      if (isTitleOnly && hasNext) {
+        const centerEl = slideEl.querySelector(".slide-center");
+        if (centerEl) {
+          const hint = document.createElement("div");
+          hint.className = "slide-continue-hint";
+          hint.setAttribute("aria-hidden", "true");
+          hint.innerHTML = '<span class="material-symbols-outlined">chevron_right</span>';
+          centerEl.appendChild(hint);
+        }
+      }
+
       if (overviewToggleEl) overviewToggleEl.hidden = state.grid.length <= 1;
       if (state.grid.length > 1) {
         announceStatus(`Section ${state.col + 1} of ${state.grid.length}, slide ${state.row + 1} of ${state.grid[state.col].length}`);
