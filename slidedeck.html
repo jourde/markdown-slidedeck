@@ -4151,7 +4151,8 @@
       const currentSlide = state.slides[state.index];
       const isTitleOnly = /^#{1,6}\s+\S[^\n]*$/.test(currentSlide.content.trim());
       const hasNext = state.index < state.slides.length - 1;
-      if (isTitleOnly && hasNext) {
+      const colHasSubslides = (state.grid[state.col]?.length ?? 0) > 1;
+      if (isTitleOnly && hasNext && !colHasSubslides) {
         const centerEl = slideEl.querySelector(".slide-center");
         if (centerEl) {
           const hint = document.createElement("div");
@@ -4362,7 +4363,7 @@
     function renderVerticalNav() {
       if (!verticalNavEl) return;
       const col = state.grid[state.col];
-      const show = state.grid.length > 1 && col && col.length > 1;
+      const show = col && col.length > 1;
       verticalNavEl.hidden = !show;
       if (!show) return;
 
