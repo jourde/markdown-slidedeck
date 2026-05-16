@@ -41,6 +41,52 @@ Raw GitHub URLs always support CORS. If you get a network error from another hos
 
 ---
 
+## Obsidian Publish
+
+Paste any `https://publish.obsidian.md/` URL into **Load from URL** to load a slide deck hosted on your Obsidian Publish site.
+
+The app resolves the raw Markdown file automatically using the Obsidian Publish CDN.
+
+-- duration: 20s
+No raw CDN URL needed — the app fetches the site UID from the Obsidian Publish page and constructs the direct file URL automatically.
+
+---
+
+## Playlist
+
+Click **Playlist** on the start screen to pre-load several slide decks at once and switch between them instantly during a presentation.
+
+**From URL** — paste the URL of an Obsidian Publish page whose content links to your slide decks. The app reads `[[wiki links]]`, `[markdown links](path)`, and full `https://` URLs from that page and pre-fetches every deck in parallel.
+
+**Manual** — paste one slide deck URL per line.
+
+Click **Pre-load All** to begin loading.
+
+-- duration: 45s
+The From URL mode resolves Obsidian wiki links vault-wide using the Obsidian Publish file cache — links always point to the correct file regardless of where it lives in your vault.
+Only URLs from the same Obsidian Publish site are included as decks; external links on the page are ignored.
+
+---
+
+## Switching Decks
+
+Once a playlist is loaded, a **deck picker overlay** shows each deck as a card:
+
+- ⏳ loading in the background
+- ✓ ready to present — click to switch instantly
+- ✗ failed to load
+
+**Click** any ✓ card, or press its **number key** (`1`–`9`), to jump to that deck.
+
+**Reopen** the picker at any time with `D` or the **queue_play_next** button in the right toolbar.
+
+**Close** with `D` or `Esc`.
+
+-- duration: 30s
+Switching decks resets to the first slide of the selected deck. The D shortcut and the toolbar button are only active after a playlist has been loaded.
+
+---
+
 # Writing Slides
 
 Everything you need to structure your Markdown file as a slide deck.
@@ -475,6 +521,8 @@ The delimiter line must contain only the delimiter characters — no spaces befo
 | Next (linear) | `Space` `Page Down` |
 | Previous (linear) | `Page Up` |
 | Slide overview | `O` |
+| Deck picker (playlist) | `D` |
+| Jump to deck N | `1`–`9` (in deck picker) |
 | Route map | `Alt M` |
 | Search | `Ctrl F` / `Cmd F` |
 | Fullscreen | `F` |
@@ -494,6 +542,8 @@ All keyboard shortcuts work when focus is on the slide — not when a text input
 - Imported files stay **local** — nothing is uploaded; URL-loaded files are fetched directly from their host
 - The **split editor** lets you author and preview at the same time — click **Download .md** to save your work
 - Use `O` during a presentation to jump to any slide instantly
+- Use **Playlist** before a multi-deck session — all decks pre-load in the background; switching between them is instant with `D` or number keys
+- Point **Playlist → From URL** at an Obsidian Publish plan page containing `[[wiki links]]` to your slide decks; the app resolves all links vault-wide automatically
 
 -- duration: 1m
 You can re-import a file at any time — the app will reload from the beginning.
