@@ -638,7 +638,7 @@
     .map-toggle {
       position: fixed;
       right: 16px;
-      bottom: 326px;
+      bottom: 378px;
       border: 0;
       border-radius: 999px;
       background: #ffffff;
@@ -829,6 +829,45 @@
     .zoom-toggle .material-symbols-outlined {
       font-size: 24px;
       line-height: 1;
+    }
+
+    .section-title-toggle {
+      position: fixed;
+      right: 16px;
+      bottom: 326px;
+      border: 0;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #2e3c54;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(21, 34, 54, 0.14);
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+
+    .section-title-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(21, 34, 54, 0.18);
+    }
+
+    .section-title-toggle:focus-visible {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .section-title-toggle .material-symbols-outlined {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .section-title-toggle.active {
+      background: #2e3c54;
+      color: #ffffff;
     }
 
     .settings-toggle {
@@ -2116,7 +2155,7 @@
     .overview-toggle {
       position: fixed;
       right: 16px;
-      bottom: 378px;
+      bottom: 430px;
       z-index: 210;
       border: 0;
       border-radius: 999px;
@@ -2156,7 +2195,7 @@
     .outline-toggle {
       position: fixed;
       right: 16px;
-      bottom: 430px;
+      bottom: 482px;
       z-index: 210;
       border: 0;
       border-radius: 999px;
@@ -2525,6 +2564,26 @@
         transform: rotate(90deg);
       }
     }
+
+    .section-title-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      padding: 0.35em 1.2em;
+      background: rgba(0, 0, 0, 0.55);
+      color: #fff;
+      font-size: 0.85em;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+      transition: opacity 0.2s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   </style>
 </head>
 <body>
@@ -2545,6 +2604,7 @@
     </section>
     <div class="slide-wrap">
       <article id="slide" class="slide" aria-live="polite" aria-atomic="true" role="region" aria-label="Slide content" tabindex="-1"></article>
+      <div id="sectionTitleBar" class="section-title-bar" aria-hidden="true" hidden><span id="sectionTitleText"></span></div>
       <nav id="trainMap" class="train-map" aria-label="Slide train map"></nav>
     </div>
     <div id="durationBar" class="duration-bar" hidden></div>
@@ -2615,6 +2675,9 @@
   </button>
   <button id="fullscreenToggle" class="fullscreen-toggle" type="button" aria-label="Enter fullscreen" title="Enter fullscreen (F)">
     <span class="material-symbols-outlined" aria-hidden="true">fullscreen</span>
+  </button>
+  <button id="sectionTitleToggle" class="section-title-toggle" type="button" aria-label="Toggle section title banner" title="Show section title" aria-pressed="false">
+    <span class="material-symbols-outlined" aria-hidden="true">bookmark</span>
   </button>
   <button id="zoomToggle" class="zoom-toggle" type="button" aria-label="Slide zoom" title="Slide zoom" aria-controls="zoomPanel" aria-expanded="false">
     <span class="material-symbols-outlined" aria-hidden="true">zoom_in</span>
@@ -2714,7 +2777,8 @@
       overviewOpen: false,
       trainMapHeight: null,
       hiddenSections: new Set(),
-      hiddenSlides: new Set()
+      hiddenSlides: new Set(),
+      showSectionTitle: false
     };
 
     const appEl = document.querySelector(".app");
@@ -2734,6 +2798,9 @@
     const delimiterGuideEl = document.getElementById("delimiterGuide");
     const helpToggleEl = document.getElementById("helpToggle");
     const fullscreenToggleEl = document.getElementById("fullscreenToggle");
+    const sectionTitleToggleEl = document.getElementById("sectionTitleToggle");
+    const sectionTitleBarEl = document.getElementById("sectionTitleBar");
+    const sectionTitleTextEl = document.getElementById("sectionTitleText");
     const zoomToggleEl = document.getElementById("zoomToggle");
     const zoomPanelEl = document.getElementById("zoomPanel");
     const zoomValueEl = document.getElementById("zoomValue");
@@ -4169,6 +4236,20 @@
       } else {
         announceStatus(`Slide ${state.index + 1} of ${state.slides.length}`);
       }
+      updateSectionTitleBar();
+    }
+
+    function updateSectionTitleBar() {
+      if (!state.showSectionTitle || !state.grid || state.grid.length <= 1) {
+        sectionTitleBarEl.hidden = true;
+        return;
+      }
+      const firstIdx = state.grid[state.col][0];
+      const html = state.slides[firstIdx]?.html || "";
+      const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+      const title = h1Match ? decodeHtml(h1Match[1]) : "";
+      sectionTitleTextEl.textContent = title;
+      sectionTitleBarEl.hidden = !title;
     }
 
     function updateSlideAlignment() {
@@ -4914,6 +4995,13 @@
       state.showGlobalDurationBar = !state.showGlobalDurationBar;
       renderDurationBar();
       announceStatus(state.showGlobalDurationBar ? "Global duration bar shown." : "Global duration bar hidden.");
+    });
+    sectionTitleToggleEl.addEventListener("click", () => {
+      state.showSectionTitle = !state.showSectionTitle;
+      sectionTitleToggleEl.setAttribute("aria-pressed", String(state.showSectionTitle));
+      sectionTitleToggleEl.classList.toggle("active", state.showSectionTitle);
+      updateSectionTitleBar();
+      announceStatus(state.showSectionTitle ? "Section title banner shown." : "Section title banner hidden.");
     });
     arrowsToggleEl.addEventListener("click", () => {
       if (!state.slides.length) {
