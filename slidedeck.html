@@ -384,6 +384,165 @@
       display: none;
     }
 
+    /* ── Playlist panel ── */
+    .playlist-panel {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #ffffff;
+      border: 1px solid #d5deeb;
+      border-radius: 14px;
+      box-shadow: 0 10px 28px rgba(21, 34, 54, 0.18);
+      padding: 16px;
+      width: min(480px, calc(100vw - 48px));
+    }
+    .playlist-panel[hidden] { display: none; }
+    .playlist-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .playlist-panel-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1b2638;
+      margin: 0;
+    }
+    .playlist-panel-close {
+      border: 0;
+      background: transparent;
+      color: #667287;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 2px 8px;
+      border-radius: 6px;
+      line-height: 1.4;
+    }
+    .playlist-panel-close:hover { color: #1e2430; }
+    .playlist-panel-close:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+    .playlist-mode-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid #e4ecf5;
+    }
+    .playlist-tab {
+      border: 0;
+      background: transparent;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #667287;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      border-radius: 6px 6px 0 0;
+      transition: color 120ms, border-color 120ms;
+    }
+    .playlist-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .playlist-tab:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+    .playlist-mode-pane { display: none; flex-direction: column; gap: 8px; }
+    .playlist-mode-pane.active { display: flex; }
+    .playlist-url-input, .playlist-textarea {
+      width: 100%;
+      border: 1px solid #c6d2e4;
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: #1f2b3f;
+      box-sizing: border-box;
+    }
+    .playlist-url-input { font-size: 0.87rem; }
+    .playlist-textarea {
+      font-size: 0.82rem;
+      font-family: ui-monospace, "SF Mono", "Fira Code", monospace;
+      min-height: 110px;
+      resize: vertical;
+    }
+    .playlist-url-input:focus-visible, .playlist-textarea:focus-visible {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 1px;
+      border-color: #7ea9d6;
+    }
+    .playlist-load-btn {
+      align-self: flex-end;
+      padding: 0 16px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 140ms;
+    }
+    .playlist-load-btn:hover { background: var(--accent-hover); }
+    .playlist-load-btn:disabled { opacity: 0.5; cursor: default; }
+    .playlist-load-btn:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+    .playlist-status { font-size: 0.8rem; color: var(--muted); min-height: 1.1em; }
+    .playlist-error { font-size: 0.82rem; color: #c0392b; }
+    .playlist-error[hidden] { display: none; }
+
+    /* ── Deck overlay ── */
+    #deckOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(10, 18, 32, 0.95);
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 48px 40px 64px;
+    }
+    #deckOverlay[hidden] { display: none; }
+    .deck-overlay-hint {
+      color: rgba(255, 255, 255, 0.35);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+      flex-shrink: 0;
+    }
+    .deck-grid {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 900px;
+    }
+    .deck-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.07);
+      border: 2px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 16px 20px;
+      min-width: 160px;
+      max-width: 220px;
+      cursor: pointer;
+      transition: background 140ms, border-color 140ms, transform 140ms;
+    }
+    .deck-card:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.28); transform: translateY(-2px); }
+    .deck-card:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+    .deck-card.active { border-color: var(--accent); background: rgba(28,126,214,0.18); }
+    .deck-card.loading, .deck-card.error { cursor: default; }
+    .deck-card.loading { opacity: 0.7; }
+    .deck-card.error { opacity: 0.55; }
+    .deck-card-num { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.35); letter-spacing: 0.05em; }
+    .deck-card-status { font-size: 1.5rem; line-height: 1; }
+    .deck-card-label { font-size: 0.8rem; color: rgba(255,255,255,0.75); text-align: center; line-height: 1.35; word-break: break-word; }
+
     .overview-hint {
       color: rgba(255, 255, 255, 0.35);
       font-size: 11px;
@@ -2192,6 +2351,30 @@
       color: #fff;
     }
 
+    .deck-toggle {
+      position: fixed;
+      right: 16px;
+      bottom: 534px;
+      z-index: 210;
+      border: 0;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #2e3c54;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(21,34,54,0.13);
+      transition: background 140ms, color 140ms, transform 140ms;
+    }
+    .deck-toggle:hover { background: #f0f4fa; transform: scale(1.07); }
+    .deck-toggle:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+    .deck-toggle .material-symbols-outlined { font-size: 22px; }
+    .deck-toggle.active { background: var(--accent, #1c7ed6); color: #fff; }
+
     .outline-toggle {
       position: fixed;
       right: 16px;
@@ -2667,6 +2850,9 @@
   <button id="overviewToggle" class="overview-toggle" type="button" aria-label="Show slide overview" title="Show slide overview (O)" aria-pressed="false" hidden>
     <span class="material-symbols-outlined" aria-hidden="true">grid_view</span>
   </button>
+  <button id="deckToggle" class="deck-toggle" type="button" aria-label="Show presentation playlist" title="Show presentation playlist (D)" aria-pressed="false" hidden>
+    <span class="material-symbols-outlined" aria-hidden="true">queue_play_next</span>
+  </button>
   <button id="outlineToggle" class="outline-toggle" type="button" aria-label="Show plan / outline" title="Plan / Outline" aria-controls="outlinePanel" aria-expanded="false">
     <span class="material-symbols-outlined" aria-hidden="true">toc</span>
   </button>
@@ -2742,6 +2928,33 @@
     </div>
     <div id="urlLoadError" class="url-load-error" aria-live="polite" hidden></div>
   </section>
+
+  <!-- Playlist panel -->
+  <section id="playlistPanel" class="playlist-panel" role="dialog" aria-label="Load presentation playlist" hidden>
+    <div class="playlist-panel-header">
+      <h2 class="playlist-panel-title">Presentation Playlist</h2>
+      <button id="playlistPanelClose" class="playlist-panel-close" type="button" aria-label="Close">✕</button>
+    </div>
+    <div class="playlist-mode-tabs" role="tablist">
+      <button class="playlist-tab active" role="tab" aria-selected="true" data-playlist-tab="url">From URL</button>
+      <button class="playlist-tab" role="tab" aria-selected="false" data-playlist-tab="manual">Manual</button>
+    </div>
+    <div class="playlist-mode-pane active" id="playlistPaneUrl">
+      <label style="font-size:0.8rem;color:#4f5a6d;" for="playlistUrlInput">URL of an Obsidian Publish markdown file containing your list of slide deck links:</label>
+      <input id="playlistUrlInput" class="playlist-url-input" type="url" autocomplete="off" placeholder="https://publish.obsidian.md/jourde/playlist" />
+    </div>
+    <div class="playlist-mode-pane" id="playlistPaneManual">
+      <label style="font-size:0.8rem;color:#4f5a6d;" for="playlistTextarea">One Obsidian Publish URL per line:</label>
+      <textarea id="playlistTextarea" class="playlist-textarea" placeholder="https://publish.obsidian.md/jourde/deck-1&#10;https://publish.obsidian.md/jourde/deck-2"></textarea>
+    </div>
+    <button id="playlistLoadBtn" class="playlist-load-btn" type="button">Pre-load All</button>
+    <div id="playlistStatus" class="playlist-status" aria-live="polite"></div>
+    <div id="playlistError" class="playlist-error" aria-live="polite" hidden></div>
+  </section>
+
+  <!-- Deck overlay -->
+  <div id="deckOverlay" role="dialog" aria-label="Presentation deck picker" hidden tabindex="-1"></div>
+
   <div id="srStatus" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
@@ -2778,7 +2991,10 @@
       trainMapHeight: null,
       hiddenSections: new Set(),
       hiddenSlides: new Set(),
-      showSectionTitle: false
+      showSectionTitle: false,
+      playlist: [],
+      playlistIndex: -1,
+      deckOverlayOpen: false
     };
 
     const appEl = document.querySelector(".app");
@@ -4154,6 +4370,11 @@
                   <span class="material-symbols-outlined">link</span>
                   <span>Load from URL</span>
                 </button>
+                <span class="empty-flow-arrow">or</span>
+                <button class="empty-step" type="button" data-action="playlist-toggle" aria-label="Load presentation playlist" title="Load presentation playlist">
+                  <span class="material-symbols-outlined">queue_play_next</span>
+                  <span>Playlist</span>
+                </button>
               </div>
             </div>
           </div>
@@ -4440,6 +4661,275 @@
       if (state.overviewOpen) closeOverview();
       else openOverview();
     }
+
+    // ── Playlist & Deck Overlay ───────────────────────────────────────────
+
+    const playlistPanelEl = document.getElementById("playlistPanel");
+    const playlistPanelCloseEl = document.getElementById("playlistPanelClose");
+    const playlistUrlInputEl = document.getElementById("playlistUrlInput");
+    const playlistTextareaEl = document.getElementById("playlistTextarea");
+    const playlistLoadBtnEl = document.getElementById("playlistLoadBtn");
+    const playlistStatusEl = document.getElementById("playlistStatus");
+    const playlistErrorEl = document.getElementById("playlistError");
+    const deckOverlayEl = document.getElementById("deckOverlay");
+    const deckToggleEl = document.getElementById("deckToggle");
+    const playlistTabEls = document.querySelectorAll(".playlist-tab");
+    const playlistPaneUrlEl = document.getElementById("playlistPaneUrl");
+    const playlistPaneManualEl = document.getElementById("playlistPaneManual");
+
+    let playlistTabMode = "url";
+
+    function setPlaylistPanelOpen(open) {
+      if (!playlistPanelEl) return;
+      playlistPanelEl.hidden = !open;
+      if (open) {
+        if (playlistErrorEl) playlistErrorEl.hidden = true;
+        if (playlistStatusEl) playlistStatusEl.textContent = "";
+        (playlistTabMode === "url" ? playlistUrlInputEl : playlistTextareaEl)?.focus();
+      }
+    }
+
+    playlistTabEls.forEach(tab => {
+      tab.addEventListener("click", () => {
+        const mode = tab.dataset.playlistTab;
+        playlistTabMode = mode;
+        playlistTabEls.forEach(t => { t.classList.toggle("active", t === tab); t.setAttribute("aria-selected", t === tab ? "true" : "false"); });
+        playlistPaneUrlEl.classList.toggle("active", mode === "url");
+        playlistPaneManualEl.classList.toggle("active", mode === "manual");
+        (mode === "url" ? playlistUrlInputEl : playlistTextareaEl)?.focus();
+      });
+    });
+
+    playlistPanelCloseEl?.addEventListener("click", () => setPlaylistPanelOpen(false));
+
+    playlistUrlInputEl?.addEventListener("keydown", e => {
+      if (e.key === "Enter") triggerPlaylistLoad();
+      if (e.key === "Escape") setPlaylistPanelOpen(false);
+    });
+
+    playlistLoadBtnEl?.addEventListener("click", triggerPlaylistLoad);
+
+    async function triggerPlaylistLoad() {
+      if (playlistErrorEl) playlistErrorEl.hidden = true;
+      let urls = [];
+      if (playlistTabMode === "url") {
+        const src = (playlistUrlInputEl?.value || "").trim();
+        if (!src) { showPlaylistError("Please enter a URL."); return; }
+        if (playlistLoadBtnEl) { playlistLoadBtnEl.disabled = true; playlistLoadBtnEl.textContent = "Fetching playlist…"; }
+        try {
+          urls = await fetchPlaylistFromUrl(src);
+        } catch (err) {
+          showPlaylistError("Could not fetch playlist: " + (err.message || err));
+          if (playlistLoadBtnEl) { playlistLoadBtnEl.disabled = false; playlistLoadBtnEl.textContent = "Pre-load All"; }
+          return;
+        }
+        if (!urls.length) { showPlaylistError("No slide deck URLs found in that file."); if (playlistLoadBtnEl) { playlistLoadBtnEl.disabled = false; playlistLoadBtnEl.textContent = "Pre-load All"; } return; }
+      } else {
+        urls = (playlistTextareaEl?.value || "").split("\n").map(l => l.trim()).filter(l => /^https?:\/\//.test(l));
+        if (!urls.length) { showPlaylistError("Enter at least one https:// URL."); return; }
+      }
+      if (playlistLoadBtnEl) { playlistLoadBtnEl.disabled = false; playlistLoadBtnEl.textContent = "Pre-load All"; }
+      setPlaylistPanelOpen(false);
+      await loadPlaylist(urls);
+    }
+
+    function showPlaylistError(msg) {
+      if (!playlistErrorEl) return;
+      playlistErrorEl.textContent = msg;
+      playlistErrorEl.hidden = false;
+    }
+
+    // Per-session cache of Obsidian Publish file name maps (uid → Map<filename, vaultPath>)
+    const _obsidianFileNameMaps = new Map();
+
+    async function getObsidianFileNameMap(uid) {
+      if (_obsidianFileNameMaps.has(uid)) return _obsidianFileNameMaps.get(uid);
+      try {
+        const resp = await fetch(`https://publish-01.obsidian.md/cache/${uid}`);
+        if (!resp.ok) { _obsidianFileNameMaps.set(uid, null); return null; }
+        const cache = await resp.json();
+        const nameMap = new Map();
+        for (const vaultPath of Object.keys(cache)) {
+          if (!vaultPath.endsWith(".md")) continue;
+          const segs = vaultPath.split("/");
+          const filename = segs[segs.length - 1].replace(/\.md$/i, "");
+          if (!nameMap.has(filename)) nameMap.set(filename, vaultPath.replace(/\.md$/i, ""));
+        }
+        _obsidianFileNameMaps.set(uid, nameMap);
+        return nameMap;
+      } catch { _obsidianFileNameMaps.set(uid, null); return null; }
+    }
+
+    async function fetchPlaylistFromUrl(playlistUrl) {
+      const parsedPlaylist = new URL(playlistUrl);
+      const pathParts = parsedPlaylist.pathname.replace(/^\//, "").split("/");
+      const siteSlug = pathParts[0];
+      const fileSegments = pathParts.slice(1).map(s => decodeURIComponent(s.replace(/\+/g, " ")));
+      const fileDir = fileSegments.slice(0, -1);
+
+      const isObsidian = /^https:\/\/publish\.obsidian\.md\//.test(playlistUrl);
+      let fetchUrl = isObsidian ? await resolveObsidianPublishUrl(playlistUrl) : playlistUrl;
+
+      // Fetch vault file-name map so wiki links can be resolved vault-wide
+      let nameMap = null;
+      if (isObsidian) {
+        const pageHtml = await (await fetch(`https://publish.obsidian.md/${siteSlug}/`)).text();
+        const uid = pageHtml.match(/["']uid["']\s*:\s*["']([a-f0-9]{32})["']/)?.[1];
+        if (uid) nameMap = await getObsidianFileNameMap(uid);
+      }
+
+      const resp = await fetch(fetchUrl);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const text = await resp.text();
+
+      const sameOriginPrefix = isObsidian ? `https://publish.obsidian.md/${siteSlug}/` : null;
+      const urls = new Set();
+
+      function toPublishUrl(rawPath) {
+        const clean = rawPath.replace(/\.md$/i, "").trim();
+        if (/^https?:\/\//.test(clean)) return clean;
+        // Name-only wiki link (no slashes): resolve vault-wide via cache
+        if (!clean.includes("/") && nameMap?.has(clean)) {
+          const vaultPath = nameMap.get(clean);
+          const encoded = vaultPath.split("/").map(s => encodeURIComponent(s)).join("/");
+          return `https://publish.obsidian.md/${siteSlug}/${encoded}`;
+        }
+        // Partial path or fallback: resolve relative to playlist file's directory
+        const segments = clean.includes("/") ? clean.split("/") : [...fileDir, clean];
+        const encoded = segments.map(s => encodeURIComponent(s.trim())).join("/");
+        return `https://publish.obsidian.md/${siteSlug}/${encoded}`;
+      }
+
+      function addUrl(url) {
+        if (sameOriginPrefix && !url.startsWith(sameOriginPrefix)) return;
+        urls.add(url);
+      }
+
+      for (const m of text.matchAll(/https?:\/\/[^\s\)\]"'<]+/g)) addUrl(m[0]);
+      for (const m of text.matchAll(/\[\[([^\]]+)\]\]/g)) addUrl(toPublishUrl(m[1].split("|")[0].trim()));
+      for (const m of text.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
+        const href = m[1].trim();
+        if (/^https?:\/\//.test(href) || href.startsWith("#")) continue;
+        addUrl(toPublishUrl(decodeURIComponent(href.replace(/\+/g, " "))));
+      }
+
+      return [...urls];
+    }
+
+    function pageNameFromUrl(url) {
+      try {
+        const parts = new URL(url).pathname.split("/").filter(Boolean);
+        return decodeURIComponent(parts[parts.length - 1]).replace(/\+/g, " ").replace(/\.md$/i, "");
+      } catch { return url; }
+    }
+
+    function extractTitle(markdown) {
+      const m = markdown.match(/^#\s+(.+)/m);
+      return m ? m[1].trim() : "";
+    }
+
+    async function loadPlaylist(urls) {
+      state.playlist = urls.map(url => ({ url, label: url, status: "loading", slides: null }));
+      state.playlistIndex = -1;
+      if (deckToggleEl) deckToggleEl.hidden = false;
+      openDeckOverlay();
+
+      await Promise.allSettled(urls.map(async (url, i) => {
+        try {
+          let fetchUrl = /^https:\/\/publish\.obsidian\.md\//.test(url)
+            ? await resolveObsidianPublishUrl(url)
+            : url;
+          const resp = await fetch(fetchUrl);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const text = await resp.text();
+          if (/does not exist|Not Found/i.test(text.slice(0, 200))) throw new Error("File not found");
+          state.playlist[i].slides = parseSlides(text);
+          state.playlist[i].label = extractTitle(text) || pageNameFromUrl(url);
+          state.playlist[i].status = "ready";
+        } catch {
+          state.playlist[i].status = "error";
+        }
+        renderDeckOverlay();
+      }));
+    }
+
+    function switchToDeck(i) {
+      const entry = state.playlist[i];
+      if (!entry || entry.status !== "ready") return;
+      state.playlistIndex = i;
+      state.slides = entry.slides;
+      state.index = 0;
+      state.col = 0;
+      state.row = 0;
+      buildGrid();
+      renderSlide();
+      closeDeckOverlay();
+    }
+
+    function renderDeckOverlay() {
+      if (!deckOverlayEl) return;
+      deckOverlayEl.innerHTML = "";
+
+      const hint = document.createElement("div");
+      hint.className = "deck-overlay-hint";
+      hint.textContent = "Click a deck or press its number — D or Esc to close";
+      deckOverlayEl.appendChild(hint);
+
+      const grid = document.createElement("div");
+      grid.className = "deck-grid";
+
+      state.playlist.forEach((entry, i) => {
+        const card = document.createElement("div");
+        card.className = "deck-card " + entry.status + (i === state.playlistIndex ? " active" : "");
+        card.setAttribute("tabindex", entry.status === "ready" ? "0" : "-1");
+        card.setAttribute("role", "button");
+        card.setAttribute("aria-label", `Deck ${i + 1}: ${entry.label}`);
+
+        const num = document.createElement("div");
+        num.className = "deck-card-num";
+        num.textContent = `DECK ${i + 1}`;
+
+        const status = document.createElement("div");
+        status.className = "deck-card-status";
+        status.textContent = entry.status === "ready" ? "✓" : entry.status === "error" ? "✗" : "⏳";
+
+        const label = document.createElement("div");
+        label.className = "deck-card-label";
+        label.textContent = entry.status === "loading" ? "Loading…" : entry.status === "error" ? "Failed to load" : entry.label;
+
+        card.appendChild(num);
+        card.appendChild(status);
+        card.appendChild(label);
+
+        if (entry.status === "ready") {
+          card.addEventListener("click", () => switchToDeck(i));
+          card.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); switchToDeck(i); } });
+        }
+        grid.appendChild(card);
+      });
+
+      deckOverlayEl.appendChild(grid);
+    }
+
+    function openDeckOverlay() {
+      if (!deckOverlayEl) return;
+      state.deckOverlayOpen = true;
+      deckOverlayEl.hidden = false;
+      deckToggleEl?.classList.add("active");
+      deckToggleEl?.setAttribute("aria-pressed", "true");
+      renderDeckOverlay();
+      deckOverlayEl.focus();
+    }
+
+    function closeDeckOverlay() {
+      if (!deckOverlayEl) return;
+      state.deckOverlayOpen = false;
+      deckOverlayEl.hidden = true;
+      deckToggleEl?.classList.remove("active");
+      deckToggleEl?.setAttribute("aria-pressed", "false");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
 
     function renderVerticalNav() {
       if (!verticalNavEl) return;
@@ -4940,6 +5430,9 @@
       if (action === "url-load-toggle") {
         setUrlLoadPanelOpen(true);
       }
+      if (action === "playlist-toggle") {
+        setPlaylistPanelOpen(true);
+      }
       if (action === "delimiter-toggle") {
         if (delimiterPanelEl.hidden) {
           setDelimiterPanelOpen(true, target);
@@ -4977,6 +5470,9 @@
       }
     });
     overviewToggleEl?.addEventListener("click", toggleOverview);
+    deckToggleEl?.addEventListener("click", () => {
+      if (state.deckOverlayOpen) closeDeckOverlay(); else openDeckOverlay();
+    });
 
     mapToggleEl.addEventListener("click", () => {
       if (!state.slides.length) {
@@ -5062,8 +5558,16 @@
       }
 
       if (event.key === "Escape") {
+        if (state.deckOverlayOpen) {
+          closeDeckOverlay();
+          return;
+        }
         if (state.overviewOpen) {
           closeOverview();
+          return;
+        }
+        if (!playlistPanelEl?.hidden) {
+          setPlaylistPanelOpen(false);
           return;
         }
         if (state.search.panelOpen) {
@@ -5092,6 +5596,13 @@
       if (event.key === "PageUp")      { event.preventDefault(); goPrev();  }
       if (event.key.toLowerCase() === "o" && !event.ctrlKey && !event.metaKey && !event.altKey && state.grid.length > 1) {
         toggleOverview();
+      }
+      if (event.key.toLowerCase() === "d" && !event.ctrlKey && !event.metaKey && !event.altKey && state.playlist.length) {
+        if (state.deckOverlayOpen) closeDeckOverlay(); else openDeckOverlay();
+      }
+      if (state.deckOverlayOpen && /^[1-9]$/.test(event.key)) {
+        event.preventDefault();
+        switchToDeck(parseInt(event.key, 10) - 1);
       }
       if (event.key.toLowerCase() === "m" && event.altKey && state.slides.length) {
         state.showTrainMap = !state.showTrainMap;
