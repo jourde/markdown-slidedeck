@@ -4809,7 +4809,11 @@
       for (const line of text.split("\n")) {
         if (SKIP_LINE.test(line)) continue;
         for (const m of line.matchAll(/https?:\/\/[^\s\)\]"'<]+/g)) addUrl(m[0]);
-        for (const m of line.matchAll(/\[\[([^\]]+)\]\]/g)) addUrl(toPublishUrl(m[1].split("|")[0].trim()));
+        for (const m of line.matchAll(/\[\[([^\]]+)\]\]/g)) {
+          const wikiTarget = m[1].split("|")[0].trim();
+          if (wikiTarget.startsWith("#")) continue; // heading-only anchor, not a file
+          addUrl(toPublishUrl(wikiTarget.split("#")[0].trim())); // strip in-page anchor
+        }
         for (const m of line.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
           const href = m[1].trim();
           if (/^https?:\/\//.test(href) || href.startsWith("#")) continue;
