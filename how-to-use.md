@@ -58,6 +58,14 @@ Click **Playlist** on the start screen to pre-load several slide decks at once a
 
 **From URL** — paste the URL of an Obsidian Publish page whose content links to your slide decks. The app reads `[[wiki links]]`, `[markdown links](path)`, and full `https://` URLs from that page and pre-fetches every deck in parallel.
 
+Prefix any link with `- [ ]` to exclude it from the playlist without deleting it:
+
+```
+- [[Deck A]]          ← included
+- [ ] [[Deck B]]      ← skipped
+- [x] [[Deck C]]      ← included
+```
+
 **Manual** — paste one slide deck URL per line.
 
 Click **Pre-load All** to begin loading.
