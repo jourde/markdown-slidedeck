@@ -4805,12 +4805,16 @@
         urls.add(url);
       }
 
-      for (const m of text.matchAll(/https?:\/\/[^\s\)\]"'<]+/g)) addUrl(m[0]);
-      for (const m of text.matchAll(/\[\[([^\]]+)\]\]/g)) addUrl(toPublishUrl(m[1].split("|")[0].trim()));
-      for (const m of text.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
-        const href = m[1].trim();
-        if (/^https?:\/\//.test(href) || href.startsWith("#")) continue;
-        addUrl(toPublishUrl(decodeURIComponent(href.replace(/\+/g, " "))));
+      const SKIP_LINE = /^\s*-\s+\[\s+\]/;
+      for (const line of text.split("\n")) {
+        if (SKIP_LINE.test(line)) continue;
+        for (const m of line.matchAll(/https?:\/\/[^\s\)\]"'<]+/g)) addUrl(m[0]);
+        for (const m of line.matchAll(/\[\[([^\]]+)\]\]/g)) addUrl(toPublishUrl(m[1].split("|")[0].trim()));
+        for (const m of line.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
+          const href = m[1].trim();
+          if (/^https?:\/\//.test(href) || href.startsWith("#")) continue;
+          addUrl(toPublishUrl(decodeURIComponent(href.replace(/\+/g, " "))));
+        }
       }
 
       return [...urls];
