@@ -4594,6 +4594,8 @@
       grid.className = "overview-grid";
 
       state.grid.forEach((column, colIdx) => {
+        if (state.hiddenSections.has(colIdx)) return;
+
         const colEl = document.createElement("div");
         colEl.className = "overview-col";
 
@@ -4606,6 +4608,8 @@
         colEl.appendChild(titleEl);
 
         column.forEach((flatIdx, rowIdx) => {
+          if (state.hiddenSlides.has(flatIdx)) return;
+
           const slide = state.slides[flatIdx];
           const isActive = colIdx === state.col && rowIdx === state.row;
 
@@ -5089,23 +5093,34 @@
     }
 
     function renderTrainMapLinear() {
+      const hiddenFlat = new Set(state.hiddenSlides);
+      state.grid.forEach((col, ci) => {
+        if (state.hiddenSections.has(ci)) col.forEach(fi => hiddenFlat.add(fi));
+      });
+      const visibleSlides = state.slides
+        .map((slide, idx) => ({ slide, idx }))
+        .filter(({ idx }) => !hiddenFlat.has(idx));
+
       const track = document.createElement("div");
       track.className = "train-track";
       trainMapEl.appendChild(track);
 
       const progress = document.createElement("div");
       progress.className = "train-progress";
-      const progressRatio = state.slides.length > 1 ? state.index / (state.slides.length - 1) : 0;
+      const visibleCurrentIdx = visibleSlides.findIndex(({ idx }) => idx === state.index);
+      const progressRatio = visibleSlides.length > 1
+        ? Math.max(0, visibleCurrentIdx) / (visibleSlides.length - 1)
+        : 0;
       progress.style.width = `calc((100% - 48px) * ${progressRatio})`;
       trainMapEl.appendChild(progress);
 
       const stationList = document.createElement("div");
       stationList.className = "station-list";
 
-      const hasDurations = state.slides.some(s => s.duration != null);
+      const hasDurations = visibleSlides.some(({ slide }) => slide.duration != null);
       trainMapEl.classList.toggle("has-durations", hasDurations);
 
-      state.slides.forEach((slide, idx) => {
+      visibleSlides.forEach(({ slide, idx }, visibleIdx) => {
         const step = document.createElement("div");
         step.className = "station-step";
 
@@ -5123,8 +5138,8 @@
         const rawTitle = headingMatch ? decodeHtml(headingMatch[1]) : "";
         const titleText = rawTitle ? ` – ${rawTitle}` : "";
         const durationLabel = slide.duration != null ? ` (${formatDuration(slide.duration)})` : "";
-        station.setAttribute("aria-label", `Go to slide ${idx + 1}${titleText}${durationLabel}`);
-        station.title = `Slide ${idx + 1}${titleText}${durationLabel}`;
+        station.setAttribute("aria-label", `Go to slide ${visibleIdx + 1}${titleText}${durationLabel}`);
+        station.title = `Slide ${visibleIdx + 1}${titleText}${durationLabel}`;
         station.addEventListener("click", () => {
           state.index = idx;
           syncGridFromIndex();
@@ -5133,7 +5148,7 @@
 
         const num = document.createElement("span");
         num.className = "station-num";
-        num.textContent = String(idx + 1);
+        num.textContent = String(visibleIdx + 1);
 
         step.appendChild(station);
         step.appendChild(num);
@@ -5159,9 +5174,15 @@
       trainMapEl.appendChild(stationList);
 
       if (state.grid.length > 1) {
-        state.grid.slice(1).forEach(col => {
+        state.grid.slice(1).forEach((col, i) => {
+          const sectionColIdx = i + 1;
+          if (state.hiddenSections.has(sectionColIdx)) return;
           const boundaryIdx = col[0];
-          const ratio = state.slides.length > 1 ? boundaryIdx / (state.slides.length - 1) : 0;
+          const visibleBoundaryPos = visibleSlides.findIndex(({ idx }) => idx === boundaryIdx);
+          if (visibleBoundaryPos < 0) return;
+          const ratio = visibleSlides.length > 1
+            ? visibleBoundaryPos / (visibleSlides.length - 1)
+            : 0;
           const tick = document.createElement("div");
           tick.className = "section-tick";
           tick.style.left = `calc(24px + (100% - 48px) * ${ratio})`;
@@ -5243,6 +5264,8 @@
       gridEl.className = "train-grid";
 
       state.grid.forEach((column, colIdx) => {
+        if (state.hiddenSections.has(colIdx)) return;
+
         const isActiveCol = colIdx === state.col;
         const colEl = document.createElement("div");
         colEl.className = "train-col" + (isActiveCol ? " active-col" : "");
@@ -5256,6 +5279,8 @@
         colEl.appendChild(headerEl);
 
         column.forEach((flatIdx, rowIdx) => {
+          if (state.hiddenSlides.has(flatIdx)) return;
+
           const slide = state.slides[flatIdx];
           const isActive = isActiveCol && rowIdx === state.row;
           const station = document.createElement("button");
