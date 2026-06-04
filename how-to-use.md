@@ -165,6 +165,26 @@ The global bar only appears when at least one slide has a duration set.
 
 ---
 
+## Hidden Slides
+
+Append ` --` to any heading to hide that slide during presentation:
+
+```
+# Hidden section --
+
+## Hidden sub-slide --
+```
+
+- A hidden `# H1` slide hides the entire section (all its sub-slides)
+- A hidden `## H2` (or deeper) slide hides only that sub-slide
+- The ` --` suffix is stripped from the displayed title — it does not appear on screen
+- Hidden slides are skipped during navigation but remain visible in the **Plan** outline, where you can toggle them on or off
+
+-- duration: 30s
+Hidden slides are useful for optional content, backup slides, or slides you want to prepare but not show by default. Toggle them back on from the Plan panel at any time.
+
+---
+
 ## Frontmatter
 
 Add YAML frontmatter at the very top of your Markdown file to set metadata:
