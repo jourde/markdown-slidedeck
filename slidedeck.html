@@ -3379,7 +3379,8 @@
 
         const noteSeparator = notesRegex ? rawForSplit.split(notesRegex) : [rawForSplit];
         const content = noteSeparator[0].trim();
-        const enhanced = applyObsidianSyntax(content);
+        const displayContent = content.replace(/^(#{1,6}[^\n]*?) --\s*$/gm, '$1');
+        const enhanced = applyObsidianSyntax(displayContent);
         return {
           content,
           notes: noteSeparator.slice(1).join("\n").trim(),
@@ -3828,6 +3829,7 @@
           ${slideRule}
           <li><code>${notesDel}</code> separates slide content from speaker notes</li>
           <li><code>${notesDel} duration: 2m</code> adds a timed duration <em>(e.g. 30s, 1m30s, 2:00)</em></li>
+          <li><code># Title --</code> hides a slide — append <code> --</code> to any heading</li>
         </ul>
       `;
     }
@@ -4946,7 +4948,11 @@
     function renderVerticalNav() {
       if (!verticalNavEl) return;
       const col = state.grid[state.col];
-      const show = col && col.length > 1;
+      const visibleRows = col
+        ? col.map((flatIdx, rowIdx) => ({ flatIdx, rowIdx }))
+            .filter(({ flatIdx }) => !state.hiddenSlides.has(flatIdx))
+        : [];
+      const show = visibleRows.length > 1;
       verticalNavEl.hidden = !show;
       if (!show) return;
 
@@ -4973,16 +4979,17 @@
       track.className = "vn-track";
       const fill = document.createElement("div");
       fill.className = "vn-fill";
-      const pct = col.length > 1 ? (state.row / (col.length - 1)) * 100 : 0;
+      const visibleRowIdx = visibleRows.findIndex(({ rowIdx }) => rowIdx === state.row);
+      const pct = visibleRows.length > 1 ? (visibleRowIdx / (visibleRows.length - 1)) * 100 : 0;
       fill.style.height = pct + "%";
       track.appendChild(fill);
       wrapper.appendChild(track);
 
-      col.forEach((flatIdx, rowIdx) => {
+      visibleRows.forEach(({ flatIdx, rowIdx }, visibleIdx) => {
         const dot = document.createElement("button");
         dot.type = "button";
         dot.className = "vn-dot";
-        dot.setAttribute("aria-label", `Go to sub-slide ${rowIdx + 1} of ${col.length}`);
+        dot.setAttribute("aria-label", `Go to sub-slide ${visibleIdx + 1} of ${visibleRows.length}`);
         if (rowIdx < state.row) dot.classList.add("past");
         if (rowIdx === state.row) dot.classList.add("active");
         dot.addEventListener("click", () => {
