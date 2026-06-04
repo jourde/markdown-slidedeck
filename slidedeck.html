@@ -493,55 +493,87 @@
       position: fixed;
       inset: 0;
       z-index: 200;
-      background: rgba(10, 18, 32, 0.95);
+      background: rgba(10, 18, 32, 0.94);
       overflow: auto;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      padding: 48px 40px 64px;
+      padding: 48px 32px 64px;
     }
     #deckOverlay[hidden] { display: none; }
     .deck-overlay-hint {
-      color: rgba(255, 255, 255, 0.35);
-      font-size: 11px;
-      letter-spacing: 0.06em;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 12px;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
       margin-bottom: 32px;
       flex-shrink: 0;
     }
     .deck-grid {
-      display: flex;
-      flex-direction: row;
-      gap: 20px;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      justify-content: center;
-      max-width: 900px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+      width: 100%;
+      max-width: 960px;
     }
     .deck-card {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      background: rgba(255,255,255,0.07);
-      border: 2px solid rgba(255,255,255,0.12);
-      border-radius: 12px;
-      padding: 16px 20px;
-      min-width: 160px;
-      max-width: 220px;
+      gap: 10px;
+      background: #ffffff;
+      border: 2px solid transparent;
+      border-radius: 14px;
+      padding: 18px 20px 16px;
       cursor: pointer;
-      transition: background 140ms, border-color 140ms, transform 140ms;
+      transition: box-shadow 140ms ease, border-color 140ms ease, transform 140ms ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.22);
     }
-    .deck-card:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.28); transform: translateY(-2px); }
+    .deck-card:hover:not(.loading):not(.error) { box-shadow: 0 6px 20px rgba(0,0,0,0.32); transform: translateY(-2px); }
     .deck-card:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
-    .deck-card.active { border-color: var(--accent); background: rgba(28,126,214,0.18); }
-    .deck-card.loading, .deck-card.error { cursor: default; }
-    .deck-card.loading { opacity: 0.7; }
-    .deck-card.error { opacity: 0.55; }
-    .deck-card-num { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.35); letter-spacing: 0.05em; }
-    .deck-card-status { font-size: 1.5rem; line-height: 1; }
-    .deck-card-label { font-size: 0.8rem; color: rgba(255,255,255,0.75); text-align: center; line-height: 1.35; word-break: break-word; }
+    .deck-card.active { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(28,126,214,0.28), 0 4px 12px rgba(0,0,0,0.22); }
+    .deck-card.loading { cursor: default; opacity: 0.7; }
+    .deck-card.error { cursor: default; }
+    .deck-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .deck-card-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #1b2638;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .deck-card.active .deck-card-num { background: var(--accent); }
+    .deck-card-status {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      padding: 3px 8px;
+      border-radius: 999px;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+    .deck-card.ready   .deck-card-status { background: #dcf5e7; color: #166534; }
+    .deck-card.loading .deck-card-status { background: #fef9c3; color: #713f12; }
+    .deck-card.error   .deck-card-status { background: #fee2e2; color: #991b1b; }
+    .deck-card-label {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #1b2638;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .deck-card.error .deck-card-label { color: #6b7280; }
 
     .overview-hint {
       color: rgba(255, 255, 255, 0.35);
@@ -4899,20 +4931,28 @@
         card.setAttribute("role", "button");
         card.setAttribute("aria-label", `Deck ${i + 1}: ${entry.label}`);
 
+        const header = document.createElement("div");
+        header.className = "deck-card-header";
+
         const num = document.createElement("div");
         num.className = "deck-card-num";
-        num.textContent = `DECK ${i + 1}`;
+        num.textContent = i + 1;
+        num.setAttribute("aria-hidden", "true");
 
-        const status = document.createElement("div");
-        status.className = "deck-card-status";
-        status.textContent = entry.status === "ready" ? "✓" : entry.status === "error" ? "✗" : "⏳";
+        header.appendChild(num);
+
+        if (entry.status !== "ready") {
+          const status = document.createElement("div");
+          status.className = "deck-card-status";
+          status.textContent = entry.status === "error" ? "Error" : "Loading…";
+          header.appendChild(status);
+        }
 
         const label = document.createElement("div");
         label.className = "deck-card-label";
-        label.textContent = entry.status === "loading" ? "Loading…" : entry.status === "error" ? "Failed to load" : entry.label;
+        label.textContent = entry.status === "error" ? "Failed to load" : entry.label;
 
-        card.appendChild(num);
-        card.appendChild(status);
+        card.appendChild(header);
         card.appendChild(label);
 
         if (entry.status === "ready") {
