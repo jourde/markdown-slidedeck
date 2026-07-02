@@ -560,10 +560,17 @@ FORMATTING RULES
    Use `## H2` headings for the slides within a section.
 3. One idea per slide. Keep on-slide text short: a heading plus a few bullets
    or a brief paragraph. Put detail in the speaker notes, not on the slide.
-4. After each slide's content, add speaker notes in a block introduced by a
-   line beginning with `--`. Notes are hidden from the audience.
-5. On that notes line you may add a timing hint, e.g. `-- duration: 1m30s`
-   (also accepts `90s`, `2m`, or `2:00`).
+4. After each slide's content, add speaker notes. Put the delimiter `--` on
+   its own line, then write the note text on the following line(s). Never put
+   note text on the same line as the delimiter. Notes are hidden from the audience.
+5. You may add a timing hint on the delimiter line, e.g. `-- duration: 1m30s`
+   (also accepts `90s`, `2m`, or `2:00`). The note text still goes on the next
+   line, not after the duration:
+      Correct:
+      -- duration: 40s
+      Talking points go here.
+      Wrong:
+      -- duration: 40s Talking points go here.
 6. Optionally begin the file with YAML frontmatter (title, author, date)
    enclosed between two `---` lines, before the first slide.
 7. Content may use standard CommonMark: bold, italic, lists, tables,
