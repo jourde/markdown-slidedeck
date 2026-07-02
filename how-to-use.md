@@ -540,6 +540,47 @@ The delimiter line must contain only the delimiter characters — no spaces befo
 
 ---
 
+## Prompt Template for GenAI
+
+Paste this into any AI assistant, fill in the bracketed parts, and it will return Markdown that respects this app's slide format:
+
+````
+You are creating a slide deck in Markdown for the "Markdown Slidedeck" app.
+Produce the deck as plain Markdown and follow these formatting rules exactly.
+
+TOPIC: [what the deck is about]
+AUDIENCE: [who it is for]
+LENGTH: [approximate number of slides]
+TONE: [e.g. formal, conversational]
+
+FORMATTING RULES
+1. Separate every slide with a line containing only `---` (three hyphens),
+   with a blank line before and after it. No spaces on the delimiter line.
+2. Start each major section with an `# H1` heading (these become columns).
+   Use `## H2` headings for the slides within a section.
+3. One idea per slide. Keep on-slide text short: a heading plus a few bullets
+   or a brief paragraph. Put detail in the speaker notes, not on the slide.
+4. After each slide's content, add speaker notes in a block introduced by a
+   line beginning with `--`. Notes are hidden from the audience.
+5. On that notes line you may add a timing hint, e.g. `-- duration: 1m30s`
+   (also accepts `90s`, `2m`, or `2:00`).
+6. Optionally begin the file with YAML frontmatter (title, author, date)
+   enclosed between two `---` lines, before the first slide.
+7. Content may use standard CommonMark: bold, italic, lists, tables,
+   blockquotes, fenced code blocks, images, and footnotes.
+8. Optional extras: Mermaid diagrams (fenced code block tagged `mermaid`),
+   maths (`$...$` inline or `$$...$$` display), and callouts
+   (`> [!note]`, `> [!tip]`, `> [!warning]`, etc.).
+9. To hide an optional slide, append ` --` to its heading.
+
+Return only the Markdown, beginning with the frontmatter or the first heading.
+````
+
+-- duration: 1m
+The template mirrors the delimiter, speaker-note, timing, frontmatter, and hidden-slide rules from the Writing Slides section. If you use a non-default delimiter (for example `===` or H1 mode), edit rule 1 to match before pasting.
+
+---
+
 ## Keyboard Reference
 
 | Action | Shortcut |
