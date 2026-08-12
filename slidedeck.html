@@ -1133,6 +1133,67 @@
       display: none;
     }
 
+    .reload-url-toggle {
+      position: fixed;
+      right: 16px;
+      bottom: 586px;
+      z-index: 210;
+      border: 0;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #2e3c54;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(21, 34, 54, 0.14);
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, color 120ms ease;
+    }
+
+    .reload-url-toggle:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(21, 34, 54, 0.18);
+    }
+
+    .reload-url-toggle:focus-visible {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .reload-url-toggle .material-symbols-outlined {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .reload-url-toggle[hidden] {
+      display: none;
+    }
+
+    .reload-url-toggle:disabled {
+      cursor: progress;
+    }
+
+    .reload-url-toggle.is-loading .material-symbols-outlined {
+      animation: reload-url-spin 900ms linear infinite;
+    }
+
+    .reload-url-toggle.is-done {
+      background: #2f9e44;
+      color: #ffffff;
+    }
+
+    .reload-url-toggle.is-error {
+      background: #e03131;
+      color: #ffffff;
+    }
+
+    @keyframes reload-url-spin {
+      to { transform: rotate(360deg); }
+    }
+
     /* ── Floating panels ── */
     .settings-panel,
     .zoom-panel {
@@ -2885,6 +2946,9 @@
   <button id="deckToggle" class="deck-toggle" type="button" aria-label="Show presentation playlist" title="Show presentation playlist (D)" aria-pressed="false" hidden>
     <span class="material-symbols-outlined" aria-hidden="true">queue_play_next</span>
   </button>
+  <button id="reloadUrlBtn" class="reload-url-toggle" type="button" aria-label="Reload deck from its URL" title="Reload from URL (R)" hidden>
+    <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+  </button>
   <button id="outlineToggle" class="outline-toggle" type="button" aria-label="Show plan / outline" title="Plan / Outline" aria-controls="outlinePanel" aria-expanded="false">
     <span class="material-symbols-outlined" aria-hidden="true">toc</span>
   </button>
@@ -3083,6 +3147,7 @@
     const urlLoadSubmitEl = document.getElementById("urlLoadSubmit");
     const urlLoadCloseEl = document.getElementById("urlLoadClose");
     const urlLoadErrorEl = document.getElementById("urlLoadError");
+    const reloadUrlBtnEl = document.getElementById("reloadUrlBtn");
     const delimiterDraft = {
       slideMode: "delimiter",
       slide: "---",
@@ -3108,6 +3173,7 @@
     const ZOOM_LEVELS = [0.8, 0.9, 1, 1.1, 1.25, 1.5];
     const SETTINGS_DEFAULTS = { bg: "cloud", font: "sans", zoom: 1 };
     const SETTINGS_KEY = "slidedeckSettings";
+    const LAST_URL_KEY = "slidedeckLastUrl";
     const EDITOR_DEBOUNCE_MS = 400;
     const BLOB_REVOKE_MS = 1000;
     const QR_DEFAULT_SIZE = 200;
@@ -4368,6 +4434,7 @@
     }
 
     function renderSlide() {
+      renderReloadUrlButton();
       if (!state.slides.length) {
         if (appEl) {
           appEl.classList.add("show-footer");
@@ -4409,6 +4476,12 @@
                   <span class="material-symbols-outlined">queue_play_next</span>
                   <span>Playlist</span>
                 </button>
+                ${lastLoadedUrl ? `
+                <span class="empty-flow-arrow">or</span>
+                <button class="empty-step" type="button" data-action="url-reload" aria-label="Reload the last URL" title="Reload the last URL&#10;${escapeHtml(lastLoadedUrl).replace(/"/g, "&quot;")}">
+                  <span class="material-symbols-outlined">refresh</span>
+                  <span>Reload last URL</span>
+                </button>` : ""}
               </div>
             </div>
           </div>
@@ -5429,12 +5502,153 @@
       if (!urlLoadPanelEl) return;
       urlLoadPanelEl.hidden = !open;
       if (open && urlLoadInputEl) {
+        if (!urlLoadInputEl.value.trim() && lastLoadedUrl) {
+          urlLoadInputEl.value = lastLoadedUrl;
+        }
         urlLoadInputEl.focus();
+        urlLoadInputEl.select();
         if (urlLoadErrorEl) urlLoadErrorEl.hidden = true;
       }
     }
 
-    async function loadFromUrl(url) {
+    /* ── Remember the last URL so the deck can be re-fetched in one click ── */
+    let lastLoadedUrl = "";
+    let reloadDoneTimer = 0;
+
+    function saveLastLoadedUrl(url) {
+      lastLoadedUrl = url;
+      try {
+        localStorage.setItem(LAST_URL_KEY, url);
+      } catch (err) {
+        console.warn("Last URL save error:", err);
+      }
+      renderReloadUrlButton();
+    }
+
+    function loadLastLoadedUrl() {
+      try {
+        lastLoadedUrl = localStorage.getItem(LAST_URL_KEY) || "";
+      } catch (err) {
+        console.warn("Last URL load error:", err);
+      }
+      renderReloadUrlButton();
+    }
+
+    /* ── Keeping your place across a reload ──
+       The file may have gained or lost slides, so a bare index is not enough:
+       remember what the current slide *is*, and look for it again afterwards. */
+    function captureSlideAnchor() {
+      const slide = state.slides[state.index];
+      if (!slide) return null;
+      return { content: slide.content, heading: slideHeadingKey(slide), index: state.index };
+    }
+
+    function slideHeadingKey(slide) {
+      const match = (slide?.content || "").match(/^#{1,6}\s+(.+)$/m);
+      return match ? match[1].trim().toLowerCase() : "";
+    }
+
+    function resolveSlideAnchor(anchor, slides) {
+      if (!anchor || !slides.length) return 0;
+      const sameContent = slides.findIndex((s) => s.content === anchor.content);
+      if (sameContent !== -1) return sameContent;
+      if (anchor.heading) {
+        const sameHeading = slides.findIndex((s) => slideHeadingKey(s) === anchor.heading);
+        if (sameHeading !== -1) return sameHeading;
+      }
+      return Math.max(0, Math.min(anchor.index, slides.length - 1));
+    }
+
+    /* The playlist entry whose slides are the ones on screen, if any. */
+    function activePlaylistEntry() {
+      const entry = state.playlist[state.playlistIndex];
+      return entry?.url && entry.slides === state.slides ? entry : null;
+    }
+
+    /* The deck on screen: the active playlist entry, otherwise the last URL loaded. */
+    function currentReloadUrl() {
+      return activePlaylistEntry()?.url || lastLoadedUrl || "";
+    }
+
+    function renderReloadUrlButton() {
+      if (!reloadUrlBtnEl) return;
+      const url = currentReloadUrl();
+      reloadUrlBtnEl.hidden = !url;
+      if (url) {
+        reloadUrlBtnEl.title = `Reload from URL (R)\n${url}`;
+        reloadUrlBtnEl.setAttribute("aria-label", `Reload deck from ${url}`);
+      }
+    }
+
+    function setReloadUrlBusy(busy) {
+      if (!reloadUrlBtnEl) return;
+      reloadUrlBtnEl.disabled = busy;
+      reloadUrlBtnEl.classList.toggle("is-loading", busy);
+      if (busy) {
+        reloadUrlBtnEl.classList.remove("is-done", "is-error");
+        clearTimeout(reloadDoneTimer);
+      }
+    }
+
+    function flashReloadUrl(cls) {
+      if (!reloadUrlBtnEl) return;
+      reloadUrlBtnEl.classList.add(cls);
+      clearTimeout(reloadDoneTimer);
+      reloadDoneTimer = setTimeout(() => reloadUrlBtnEl.classList.remove("is-done", "is-error"), cls === "is-error" ? 2500 : 1200);
+    }
+
+    /* Re-fetch the deck currently on screen, keeping the current slide position. */
+    function reloadFromUrl() {
+      if (activePlaylistEntry()) {
+        reloadPlaylistDeck(state.playlistIndex);
+        return;
+      }
+      if (!lastLoadedUrl) {
+        setUrlLoadPanelOpen(true);
+        return;
+      }
+      loadFromUrl(lastLoadedUrl, { preservePosition: true, viaReloadButton: true });
+    }
+
+    /* Reload one deck of the playlist in place, without re-fetching the others. */
+    async function reloadPlaylistDeck(i) {
+      const entry = state.playlist[i];
+      if (!entry) return;
+      setReloadUrlBusy(true);
+      const anchor = captureSlideAnchor();
+      try {
+        const fetchUrl = /^https:\/\/publish\.obsidian\.md\//.test(entry.url)
+          ? await resolveObsidianPublishUrl(entry.url)
+          : entry.url;
+        const response = await fetch(fetchUrl, { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const text = await response.text();
+        entry.slides = parseSlides(text);
+        entry.label = extractTitle(text) || pageNameFromUrl(entry.url);
+        entry.status = "ready";
+        state.sourceMarkdown = text;
+        state.slides = entry.slides;
+        state.index = resolveSlideAnchor(anchor, state.slides);
+        buildGrid(); // restores col/row from state.index
+        if (state.search.query.trim()) rebuildSearchResults();
+        if (editorTextareaEl && appEl?.classList.contains("split-view")) {
+          editorTextareaEl.value = text;
+          updateEditorStatus();
+        }
+        renderSlide();
+        flashReloadUrl("is-done");
+        announceStatus(`Deck reloaded — ${state.slides.length} slide${state.slides.length !== 1 ? "s" : ""}.`);
+      } catch (err) {
+        const msg = String(err?.message || err);
+        flashReloadUrl("is-error");
+        announceStatus(`Could not reload the deck: ${msg}`);
+        console.warn("Deck reload error:", err);
+      } finally {
+        setReloadUrlBusy(false);
+      }
+    }
+
+    async function loadFromUrl(url, { preservePosition = false, viaReloadButton = false } = {}) {
       const trimmed = String(url || "").trim();
       if (!trimmed) return;
       let parsedUrl;
@@ -5454,7 +5668,9 @@
         urlLoadSubmitEl.disabled = true;
         urlLoadSubmitEl.textContent = "Loading…";
       }
+      setReloadUrlBusy(true);
       if (urlLoadErrorEl) urlLoadErrorEl.hidden = true;
+      const anchor = preservePosition ? captureSlideAnchor() : null;
       try {
         let fetchUrl = /^https:\/\/github\.com\/[^/]+\/[^/]+\/blob\//.test(trimmed)
           ? trimmed.replace('https://github.com/', 'https://raw.githubusercontent.com/').replace('/blob/', '/')
@@ -5466,31 +5682,45 @@
         if (/^https:\/\/publish\.obsidian\.md\//.test(trimmed)) {
           fetchUrl = await resolveObsidianPublishUrl(trimmed);
         }
-        const response = await fetch(fetchUrl);
+        // no-store: an updated file on the server must win over the browser cache
+        const response = await fetch(fetchUrl, { cache: "no-store" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const text = await response.text();
         state.sourceMarkdown = text;
         state.slides = parseSlides(text);
-        buildGrid();
-        state.index = 0;
-        state.col = 0;
-        state.row = 0;
+        state.index = anchor ? resolveSlideAnchor(anchor, state.slides) : 0;
+        buildGrid(); // restores col/row from state.index
         if (state.search.query.trim()) rebuildSearchResults();
         if (editorTextareaEl && appEl?.classList.contains("split-view")) {
           editorTextareaEl.value = text;
           updateEditorStatus();
         }
+        saveLastLoadedUrl(trimmed);
         setUrlLoadPanelOpen(false);
         renderSlide();
+        if (viaReloadButton) {
+          flashReloadUrl("is-done");
+          announceStatus(`Deck reloaded — ${state.slides.length} slide${state.slides.length !== 1 ? "s" : ""}.`);
+        }
       } catch (err) {
         const msg = String(err?.message || err);
+        const friendly = msg.toLowerCase().includes("failed to fetch") || msg.toLowerCase().includes("networkerror")
+          ? "Network error — check the URL or the server's CORS settings."
+          : `Could not load: ${msg}`;
         if (urlLoadErrorEl) {
-          urlLoadErrorEl.textContent = msg.toLowerCase().includes("failed to fetch") || msg.toLowerCase().includes("networkerror")
-            ? "Network error — check the URL or the server's CORS settings."
-            : `Could not load: ${msg}`;
+          urlLoadErrorEl.textContent = friendly;
           urlLoadErrorEl.hidden = false;
         }
+        if (viaReloadButton) flashReloadUrl("is-error");
+        // A reload can fail while the panel is closed — show it so the error is visible
+        if (viaReloadButton && urlLoadPanelEl?.hidden) {
+          if (urlLoadInputEl) urlLoadInputEl.value = trimmed;
+          urlLoadPanelEl.hidden = false;
+          if (urlLoadErrorEl) urlLoadErrorEl.hidden = false;
+        }
+        announceStatus(friendly);
       } finally {
+        setReloadUrlBusy(false);
         if (urlLoadSubmitEl) {
           urlLoadSubmitEl.disabled = false;
           urlLoadSubmitEl.textContent = "Load";
@@ -5509,6 +5739,9 @@
       }
       if (action === "url-load-toggle") {
         setUrlLoadPanelOpen(true);
+      }
+      if (action === "url-reload") {
+        reloadFromUrl();
       }
       if (action === "playlist-toggle") {
         setPlaylistPanelOpen(true);
@@ -5691,6 +5924,10 @@
       }
       if (event.key.toLowerCase() === "f" && !event.ctrlKey && !event.metaKey && !event.altKey) {
         toggleFullscreen();
+      }
+      if (event.key.toLowerCase() === "r" && !event.ctrlKey && !event.metaKey && !event.altKey && currentReloadUrl()) {
+        event.preventDefault();
+        reloadFromUrl();
       }
     });
 
@@ -5928,6 +6165,9 @@
       if (e.key === "Enter") loadFromUrl(urlLoadInputEl.value);
       if (e.key === "Escape") setUrlLoadPanelOpen(false);
     });
+
+    reloadUrlBtnEl?.addEventListener("click", reloadFromUrl);
+    loadLastLoadedUrl();
     // ─────────────────────────────────────────────────────────────────────
 
     // ── Split-view editor ────────────────────────────────────────────────
