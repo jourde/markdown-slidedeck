@@ -18,6 +18,8 @@ Everything stays local in your browser. Nothing is uploaded anywhere.
 
 That's it. Your presentation is ready.
 
+Loaded from a URL? Press `R` at any time to pull the latest version of that file.
+
 -- duration: 45s
 The app parses your Markdown file entirely in the browser using the marked.js library.
 
@@ -38,6 +40,21 @@ Press `Esc` or click **✕** to dismiss without loading.
 
 -- duration: 45s
 Raw GitHub URLs always support CORS. If you get a network error from another host, check that the server sends an Access-Control-Allow-Origin header.
+
+---
+
+## Reload from URL
+
+Once a deck has been loaded from a URL, a **refresh** button appears at the top of the button rail (bottom right). Click it — or press `R` — to fetch the same URL again.
+
+Use it after editing the online file: the new version replaces the old one **without retyping the URL**, and you stay on the slide you were showing.
+
+- The fetch bypasses the browser cache, so you always get the latest version
+- The URL is remembered between sessions — after reopening the app, **Reload last URL** appears on the start screen
+- With a playlist loaded, the button reloads the deck currently on screen and leaves the other decks untouched
+
+-- duration: 45s
+The button turns green for a moment when the reload succeeds, red if it fails. On failure the Load from URL panel reopens with the error message so you can correct the address.
 
 ---
 
@@ -602,6 +619,7 @@ The template mirrors the delimiter, speaker-note, timing, frontmatter, and hidde
 | Route map | `Alt M` |
 | Search | `Ctrl F` / `Cmd F` |
 | Fullscreen | `F` |
+| Reload from URL | `R` |
 | Close any panel | `Esc` |
 
 -- duration: 30s
@@ -616,6 +634,7 @@ All keyboard shortcuts work when focus is on the slide — not when a text input
 - Speaker notes are a great place for **talking points** and **statistics**
 - The `# H1` delimiter mode works well for existing Markdown documents and creates sections automatically
 - Imported files stay **local** — nothing is uploaded; URL-loaded files are fetched directly from their host
+- Edited the online file mid-session? Press `R` to pull the new version without leaving your slide
 - The **split editor** lets you author and preview at the same time — click **Download .md** to save your work
 - Use `O` during a presentation to jump to any slide instantly
 - Use **Playlist** before a multi-deck session — all decks pre-load in the background; switching between them is instant with `D` or number keys
