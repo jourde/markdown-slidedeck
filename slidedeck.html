@@ -920,6 +920,15 @@
       outline-offset: 2px;
     }
 
+    /* Each of these sets `display`, which beats the browser's own [hidden] rule —
+       so the toggles JS hides need to opt out of display explicitly. */
+    .duration-bar-toggle[hidden],
+    .global-duration-bar-toggle[hidden],
+    .overview-toggle[hidden],
+    .deck-toggle[hidden] {
+      display: none;
+    }
+
     .search-toggle {
       position: fixed;
       right: 16px;
@@ -1604,10 +1613,12 @@
       color: #174777;
     }
 
+    /* Rail slots are 52px apart: 14, 66, 118, 170 … — one button per slot */
     .arrows-toggle {
       position: fixed;
       right: 16px;
-      bottom: 170px;
+      bottom: 638px;
+      z-index: 210;
       border: 0;
       border-radius: 999px;
       background: #ffffff;
