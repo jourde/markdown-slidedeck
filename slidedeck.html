@@ -1675,8 +1675,10 @@
       left: 14px;
     }
 
+    /* The button rail owns right: 16–60px and, on tall viewports, reaches the
+       vertical middle — so the right arrow gets its own lane left of it. */
     .nav-arrow.right {
-      right: 14px;
+      right: 68px;
     }
 
     .nav-arrow:focus-visible {
@@ -1694,9 +1696,11 @@
       cursor: not-allowed;
     }
 
+    /* Third lane along, matching the bottom row's 16 / 68 / 120 rhythm —
+       clear of the rail (16–60) and of the right arrow (68–114). */
     .vertical-nav {
       position: fixed;
-      right: 70px;
+      right: 120px;
       top: 50%;
       transform: translateY(-50%);
       display: flex;
