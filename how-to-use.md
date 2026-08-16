@@ -6,7 +6,7 @@ Write slides in plain Markdown — no plugins, no accounts, no internet required
 **Navigate:** `→` next section · `↓` sub-slide · `Space` next slide
 
 -- duration: 30s
-Everything stays local in your browser. Nothing is uploaded anywhere.
+Everything stays local in your browser. Nothing is uploaded anywhere. Markdown rendering and QR codes are bundled into this file and work with no network; Mermaid diagrams, KaTeX maths, and the interface icon font are still fetched from a CDN, so plan for that if you present offline.
 
 ---
 
@@ -21,7 +21,7 @@ That's it. Your presentation is ready.
 Loaded from a URL? Press `R` at any time to pull the latest version of that file.
 
 -- duration: 45s
-The app parses your Markdown file entirely in the browser using the marked.js library.
+The app parses your Markdown file entirely in the browser using the marked.js library, which is bundled into this file rather than fetched from a CDN.
 
 ---
 
@@ -213,7 +213,7 @@ Appending ` --` to a heading still works and behaves the same way:
 ## Hidden sub-slide --
 ```
 
-It only applies to headings — `<!-- skip -->` is the general form.
+It only applies to headings — `<!-- skip -->` is the general form. Like the new marker, it is ignored inside fenced code blocks, so examples such as the one above do not omit the slide showing them.
 
 -- duration: 30s
 Omitted slides are useful for optional content, backup slides, or slides prepared but not shown by default. Toggle them back on from the Plan panel at any time.
@@ -355,10 +355,14 @@ Zoom scales the slide content without affecting the layout or overflow behaviour
 
 Click the **toc** (table of contents) button to open the Plan panel.
 
-The panel lists all slides that have an `# H1` heading. Click any entry to jump directly to that section.
+Every section — each slide carrying an `# H1` — gets an entry. The **H1 · H2 · H3** buttons at the top of the panel choose how deep sub-slides are listed. Click any entry to jump straight to that slide.
+
+Each entry carries a checkbox controlling whether the slide is presented. Untick one to omit it for the current session; your Markdown file is never modified. Slides omitted by a marker start unticked and greyed out — see Hidden Slides.
+
+An omitted slide is always listed, even with no heading at all or a heading deeper than the level you picked, so you can always bring it back.
 
 -- duration: 20s
-The outline is built automatically from H1 headings. It updates as you navigate.
+The outline is built automatically from your headings. It updates as you navigate.
 
 ---
 
@@ -526,20 +530,23 @@ Callout type names match Obsidian conventions. Many aliases are also supported (
 
 Generate QR codes directly in a slide using either syntax:
 
-**Image syntax** (alt text starts with `qr`):
+**Image syntax** (alt text starts with `qr`) — the URL is the link target, not an image file:
 ```
 ![qr](https://example.com)
+![qr 120](https://example.com)
 ```
+
+A number in the alt text sets the size in pixels.
 
 **Div syntax** (for more control):
 ```html
 <div data-qr="https://example.com" data-size="200"></div>
 ```
 
-The QR code is rendered in the browser using the qrcodejs library.
+The QR code is generated in the browser by the qrcodejs library, which is bundled into this file — QR codes still work with no network.
 
 -- duration: 30s
-The data-size attribute controls the pixel dimensions. Default is 200 × 200 px.
+The size controls the pixel dimensions, 200 × 200 px by default, at error-correction level H. Codes stay scannable on a poor projector or from the back of the room.
 
 ---
 
