@@ -3458,6 +3458,75 @@
       return slides;
     }
 
+    // Applies `re` to every stretch of the line that sits outside an inline
+    // code span, so a marker quoted as `<!-- skip -->` stays inert.
+    function replaceOutsideCode(line, re, replacement) {
+      return line
+        .split(/(`[^`]*`)/)
+        .map((part) => (part.startsWith("`") ? part : part.replace(re, replacement)))
+        .join("");
+    }
+
+    // Walks every line, telling the callback whether it sits inside a fenced
+    // code block. Fence lines themselves count as inside.
+    function eachLine(text, fn) {
+      let inFence = false;
+      let fenceChar = "";
+      String(text).split("\n").forEach((line) => {
+        const fenceMatch = line.trim().match(/^(```+|~~~+)/);
+        if (fenceMatch) {
+          const markerChar = fenceMatch[1][0];
+          if (!inFence) {
+            inFence = true;
+            fenceChar = markerChar;
+          } else if (fenceChar === markerChar) {
+            inFence = false;
+            fenceChar = "";
+          }
+          fn(line, true);
+          return;
+        }
+        fn(line, inFence);
+      });
+    }
+
+    // Blanks out fenced code blocks so a marker quoted in an example is not
+    // mistaken for a real one.
+    function withoutFencedBlocks(text) {
+      const kept = [];
+      eachLine(text, (line, inFence) => kept.push(inFence ? "" : line));
+      return kept.join("\n");
+    }
+
+    // A slide is omitted when it carries a `<!-- skip -->` marker outside any
+    // code fence. The marker is stripped from the content it is found in, so it
+    // never reaches search, headings, or the rendered slide.
+    function extractSkipMarker(text) {
+      const kept = [];
+      let skip = false;
+
+      eachLine(text, (line, inFence) => {
+        if (inFence) {
+          kept.push(line);
+          return;
+        }
+
+        const stripped = replaceOutsideCode(line, /<!--\s*skip\s*-->/gi, "");
+        if (stripped === line) {
+          kept.push(line);
+          return;
+        }
+        skip = true;
+        // Drop the line entirely when the marker was all it held, so a
+        // standalone marker leaves no blank line behind.
+        if (stripped.trim()) {
+          kept.push(stripped.replace(/\s+$/, ""));
+        }
+      });
+
+      return { content: kept.join("\n").trim(), skip };
+    }
+
     function parseSlides(markdown) {
       const { content, metadata } = extractFrontmatter(markdown);
       state.frontmatter = metadata;
@@ -3491,14 +3560,15 @@
           : raw;
 
         const noteSeparator = notesRegex ? rawForSplit.split(notesRegex) : [rawForSplit];
-        const content = noteSeparator[0].trim();
+        const { content, skip } = extractSkipMarker(noteSeparator[0].trim());
         const displayContent = content.replace(/^(#{1,6}[^\n]*?) --\s*$/gm, '$1');
         const enhanced = applyObsidianSyntax(displayContent);
         return {
           content,
           notes: noteSeparator.slice(1).join("\n").trim(),
           html: markdownToHtml(enhanced),
-          duration
+          duration,
+          skip
         };
       });
     }
@@ -3525,20 +3595,44 @@
       columns.push(col);
       state.grid = columns;
       state.grid.forEach((colSlides, colIdx) => {
+        // A column is a section only when an H1 opens it; the very first column
+        // of an H1-less deck holds every slide, and marking its opener must not
+        // wipe out the whole deck.
+        const opener = state.slides[colSlides[0]];
+        const openerIsSection = /^<h1[\s>]/i.test(String(opener?.html || "").trimStart());
+
+        if (opener?.skip && openerIsSection) {
+          state.hiddenSections.add(colIdx);
+        }
         for (const si of colSlides) {
-          const content = state.slides[si].content;
+          const content = withoutFencedBlocks(state.slides[si].content);
           if (/^#[^#\n].* --\s*$/m.test(content)) {
             state.hiddenSections.add(colIdx);
             break;
           }
         }
-        colSlides.slice(1).forEach(si => {
-          if (/^#{2,}\s.* --\s*$/m.test(state.slides[si].content)) {
+
+        colSlides.forEach((si, rowIdx) => {
+          const slide = state.slides[si];
+          if (slide.skip && !(rowIdx === 0 && openerIsSection)) {
+            state.hiddenSlides.add(si);
+          }
+          if (rowIdx > 0 && /^#{2,}\s.* --\s*$/m.test(withoutFencedBlocks(slide.content))) {
             state.hiddenSlides.add(si);
           }
         });
       });
       syncGridFromIndex();
+    }
+
+    // Flat indices of every slide currently omitted, whether on its own or
+    // through its section.
+    function hiddenFlatIndices() {
+      const hidden = new Set(state.hiddenSlides);
+      state.grid.forEach((col, ci) => {
+        if (state.hiddenSections.has(ci)) col.forEach(fi => hidden.add(fi));
+      });
+      return hidden;
     }
 
     function syncGridFromIndex() {
@@ -3942,7 +4036,8 @@
           ${slideRule}
           <li><code>${notesDel}</code> separates slide content from speaker notes</li>
           <li><code>${notesDel} duration: 2m</code> adds a timed duration <em>(e.g. 30s, 1m30s, 2:00)</em></li>
-          <li><code># Title --</code> hides a slide — append <code> --</code> to any heading</li>
+          <li><code>&lt;!-- skip --&gt;</code> omits a slide — on a section's opening slide it omits the whole section</li>
+          <li><code># Title --</code> also hides a slide — append <code> --</code> to any heading</li>
         </ul>
       `;
     }
@@ -5162,8 +5257,15 @@
       if (!durationBarEl) return;
       durationBarEl.innerHTML = "";
 
-      const hasDurations = state.slides.some(s => s.duration != null);
-      const totalDuration = state.slides.reduce((sum, s) => sum + (s.duration || 0), 0);
+      // Omitted slides do not count towards the running total.
+      const hiddenFlat = hiddenFlatIndices();
+      const counts = (idx) => !hiddenFlat.has(idx);
+      const hasDurations = state.slides.some(
+        (s, idx) => s.duration != null && (counts(idx) || idx === state.index)
+      );
+      const totalDuration = state.slides.reduce(
+        (sum, s, idx) => sum + (counts(idx) ? (s.duration || 0) : 0), 0
+      );
 
       // Per-slide toggle button
       durationBarToggleEl.hidden = !hasDurations || !state.slides.length;
@@ -5218,7 +5320,7 @@
       if (showGlobal) {
         const slidesBeforeElapsed = state.slides
           .slice(0, state.index)
-          .reduce((sum, s) => sum + (s.duration || 0), 0);
+          .reduce((sum, s, idx) => sum + (counts(idx) ? (s.duration || 0) : 0), 0);
         const currentElapsed = currentSlide && currentSlide.duration
           ? Math.min((Date.now() - state.slideStartedAt) / 1000, currentSlide.duration)
           : 0;
@@ -5228,10 +5330,7 @@
     }
 
     function renderTrainMapLinear() {
-      const hiddenFlat = new Set(state.hiddenSlides);
-      state.grid.forEach((col, ci) => {
-        if (state.hiddenSections.has(ci)) col.forEach(fi => hiddenFlat.add(fi));
-      });
+      const hiddenFlat = hiddenFlatIndices();
       const visibleSlides = state.slides
         .map((slide, idx) => ({ slide, idx }))
         .filter(({ idx }) => !hiddenFlat.has(idx));
@@ -6099,6 +6198,40 @@
         return li;
       }
 
+      // Label for a slide the Plan must list even though it carries no heading
+      // of its own.
+      function fallbackTitle(si) {
+        const firstLine = String(state.slides[si]?.content || "")
+          .split("\n")
+          .map(l => l
+            .replace(/!\[\[([^\]|]+?)(?:\|[^\]]*)?\]\]/g, "$1")
+            .replace(/!\[([^\]]*)\]\(([^)]*)\)/g, (_, alt, src) => alt || src)
+            .replace(/^[#>\-*\s]+/, "")
+            .trim())
+          .find(Boolean);
+        if (!firstLine) return `Slide ${si + 1}`;
+        return firstLine.length > 42 ? `${firstLine.slice(0, 42)}…` : firstLine;
+      }
+
+      function appendSlideItem(si) {
+        const slide = state.slides[si];
+        const m = slide?.html.match(/<h([2-6])[^>]*>([\s\S]*?)<\/h\1>/i);
+        const level = m ? parseInt(m[1]) : 2;
+        let subTitle = "";
+        if (m) {
+          _tmp.innerHTML = m[2].replace(/<[^>]+>/g, "");
+          subTitle = _tmp.textContent.replace(/\s+/g, " ").trim();
+        }
+        // A slide omitted by marker is always listed, whatever its heading
+        // depth — the Plan is the only way to bring it back.
+        if (!slide?.skip && (!subTitle || level > outlineMaxLevel)) return;
+        outlineListEl.appendChild(makeItem(
+          subTitle || fallbackTitle(si), si, state.hiddenSlides.has(si),
+          si === state.index, level,
+          checked => checked ? state.hiddenSlides.delete(si) : state.hiddenSlides.add(si)
+        ));
+      }
+
       state.grid.forEach((colSlides, colIdx) => {
         let colTitle = "";
         let colJumpIdx = colSlides[0];
@@ -6111,26 +6244,18 @@
             break;
           }
         }
-        if (!colTitle) return;
+        if (!colTitle) {
+          // No H1 heads this column, so it gets no section row. Slides omitted
+          // inside it still need their own toggle.
+          colSlides.forEach(si => { if (state.slides[si]?.skip) appendSlideItem(si); });
+          return;
+        }
         outlineListEl.appendChild(makeItem(
           colTitle, colJumpIdx, state.hiddenSections.has(colIdx),
           colSlides.includes(state.index), 1,
           checked => checked ? state.hiddenSections.delete(colIdx) : state.hiddenSections.add(colIdx)
         ));
-        colSlides.slice(1).forEach(si => {
-          const m = state.slides[si]?.html.match(/<h([2-6])[^>]*>([\s\S]*?)<\/h\1>/i);
-          if (!m) return;
-          const level = parseInt(m[1]);
-          if (level > outlineMaxLevel) return;
-          _tmp.innerHTML = m[2].replace(/<[^>]+>/g, "");
-          const subTitle = _tmp.textContent.replace(/\s+/g, " ").trim();
-          if (!subTitle) return;
-          outlineListEl.appendChild(makeItem(
-            subTitle, si, state.hiddenSlides.has(si),
-            si === state.index, level,
-            checked => checked ? state.hiddenSlides.delete(si) : state.hiddenSlides.add(si)
-          ));
-        });
+        colSlides.filter(si => si !== colJumpIdx).forEach(appendSlideItem);
       });
     }
 
