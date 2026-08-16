@@ -184,7 +184,28 @@ The global bar only appears when at least one slide has a duration set.
 
 ## Hidden Slides
 
-Append ` --` to any heading to hide that slide during presentation:
+Add `<!-- skip -->` anywhere in a slide to omit it during presentation:
+
+```
+## Optional detour
+<!-- skip -->
+
+This slide stays in the file but is not presented.
+```
+
+- The marker works on **any** slide — with a heading, with a deep heading, or with no heading at all
+- On a slide that **opens a section** (the one carrying the `# H1`), it omits the whole section, sub-slides included
+- On any other slide, it omits that slide alone
+- It can sit on its own line or at the end of a line, e.g. `## Optional detour <!-- skip -->`
+- It is stripped before rendering, so it never shows on screen, in search, or in the exported HTML
+- It is an ordinary HTML comment: Obsidian, GitHub, and every other Markdown renderer ignore it, so the file stays clean elsewhere
+- A marker inside a fenced code block or inline code — like `` `<!-- skip -->` `` — is left alone, so you can document it
+
+Omitted slides are skipped during navigation and drop out of the **Total** duration bar, but they stay listed in the **Plan** outline, greyed out with an unchecked box. Tick it to bring the slide back for the current session — the Markdown file is untouched.
+
+### The older ` --` marker
+
+Appending ` --` to a heading still works and behaves the same way:
 
 ```
 # Hidden section --
@@ -192,13 +213,10 @@ Append ` --` to any heading to hide that slide during presentation:
 ## Hidden sub-slide --
 ```
 
-- A hidden `# H1` slide hides the entire section (all its sub-slides)
-- A hidden `## H2` (or deeper) slide hides only that sub-slide
-- The ` --` suffix is stripped from the displayed title — it does not appear on screen
-- Hidden slides are skipped during navigation but remain visible in the **Plan** outline, where you can toggle them on or off
+It only applies to headings — `<!-- skip -->` is the general form.
 
 -- duration: 30s
-Hidden slides are useful for optional content, backup slides, or slides you want to prepare but not show by default. Toggle them back on from the Plan panel at any time.
+Omitted slides are useful for optional content, backup slides, or slides prepared but not shown by default. Toggle them back on from the Plan panel at any time.
 
 ---
 
@@ -595,7 +613,9 @@ FORMATTING RULES
 8. Optional extras: Mermaid diagrams (fenced code block tagged `mermaid`),
    maths (`$...$` inline or `$$...$$` display), and callouts
    (`> [!note]`, `> [!tip]`, `> [!warning]`, etc.).
-9. To hide an optional slide, append ` --` to its heading.
+9. To omit an optional slide, put `<!-- skip -->` on a line of its own inside
+   that slide. On the slide carrying a section's `# H1`, this omits the whole
+   section.
 
 Return only the Markdown, beginning with the frontmatter or the first heading.
 ````
