@@ -5,8 +5,9 @@ Write slides in plain Markdown — no plugins, no accounts, no internet required
 
 **Navigate:** `→` next section · `↓` sub-slide · `Space` next slide
 
--- duration: 30s
-Everything stays local in your browser. Nothing is uploaded anywhere. Markdown rendering and QR codes are bundled into this file and work with no network; Mermaid diagrams, KaTeX maths, and the interface icon font are still fetched from a CDN, so plan for that if you present offline.
+--
+*This guide is written and updated with generative AI, without systematic human review — some details may be inaccurate or lag behind the app.*
+--
 
 ---
 
@@ -677,6 +678,10 @@ You can re-import a file at any time — the app will reload from the beginning.
 Load your own Markdown file and start presenting.
 
 *Write in Markdown. Present anywhere.*
+
+### About this guide
+
+This document is generated with generative AI and refreshed regularly as the app evolves. It is not systematically reviewed by a human, so it may contain inaccuracies or describe behaviour that has since changed. When the guide and the app disagree, the app is right.
 
 -- duration: 15s
 This slide deck was itself written in Markdown and presented using this app.
