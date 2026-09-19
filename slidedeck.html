@@ -6449,6 +6449,30 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
 
     loadSettings();
     renderSlide();
+
+    // ── Deck given in the page URL (?url=…) ──────────────────────────────
+    /* Opens the app with its deck already loaded, e.g.
+         slidedeck.html?url=PRESENTATIONS/mon-deck.md
+       A relative path is resolved against this page, so the app and the
+       .md files can be served together by one local server. The URL is
+       remembered like any other, so R reloads it after an edit. */
+    (function loadDeckFromQuery() {
+      let requested = "";
+      try {
+        requested = (new URLSearchParams(location.search).get("url") || "").trim();
+      } catch (err) {
+        console.warn("Query string read error:", err);
+      }
+      if (!requested) return;
+      let resolved;
+      try {
+        resolved = new URL(requested, location.href).href;
+      } catch {
+        console.warn("Invalid ?url= value:", requested);
+        return;
+      }
+      loadFromUrl(resolved);
+    })();
   </script>
 </body>
 </html>
