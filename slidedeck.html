@@ -3287,6 +3287,36 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
         .replace(/>/g, "&gt;");
     }
 
+    /* ── Where the deck lives ──
+       A deck fetched from a URL can sit in a different folder from this app,
+       so its relative image paths have to be resolved against the deck rather
+       than against the page. Empty for a deck imported from a local file,
+       which keeps the previous behaviour. */
+    let deckBaseUrl = "";
+
+    function setDeckBaseUrl(url) {
+      deckBaseUrl = String(url || "");
+    }
+
+    /* Resolve one asset path found in the Markdown against the deck's location.
+       Absolute URLs, data: URIs and in-page anchors are left untouched. An
+       "assets:" key in the frontmatter overrides the folder relative paths are
+       resolved against, for vaults that keep every attachment in one place. */
+    function resolveAssetUrl(src) {
+      const raw = String(src ?? "").trim();
+      if (!raw || /^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(raw)) return raw;
+      if (!deckBaseUrl) return raw;
+      try {
+        const assets = String(state.frontmatter?.assets || "").trim();
+        const base = assets
+          ? new URL(assets.endsWith("/") ? assets : `${assets}/`, deckBaseUrl).href
+          : deckBaseUrl;
+        return new URL(raw, base).href;
+      } catch {
+        return raw;
+      }
+    }
+
     if (window.marked) {
       window.marked.setOptions({
         gfm: true,
@@ -3302,6 +3332,7 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
             return `<span style="text-decoration:line-through;text-decoration-thickness:1px;">${this.parser.parseInline(tokens)}</span>`;
           },
           image({ href, title, text }) {
+            const src = resolveAssetUrl(href);
             const dimMatch = text && text.match(/^\|?(\d+)(?:x(\d+))?$/);
             if (dimMatch) {
               const [, w, h] = dimMatch;
@@ -3309,11 +3340,11 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
                 ? `width:${w}px;height:${h}px;object-fit:contain;`
                 : `width:${w}px;`;
               const titleAttr = title ? ` title="${title}"` : "";
-              return `<img src="${href}"${titleAttr} style="${style}" alt="">`;
+              return `<img src="${src}"${titleAttr} style="${style}" alt="">`;
             }
             const altAttr = text ? ` alt="${text}"` : "";
             const titleAttr = title ? ` title="${title}"` : "";
-            return `<img src="${href}"${altAttr}${titleAttr}>`;
+            return `<img src="${src}"${altAttr}${titleAttr}>`;
           }
         }
       });
@@ -3459,8 +3490,9 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
 
       // Image embeds: ![[image.png]] or ![[image.png|W]] or ![[image.png|WxH]]
       text = text.replace(/!\[\[([^\]|]+?)(?:\|(\d+(?:x\d+)?))?\]\]/g, (_, filename, dim) => {
-        const src = filename.trim();
-        if (!dim) return `<img src="${src}" alt="${src.replace(/"/g, "&quot;")}">`;
+        const name = filename.trim();
+        const src = resolveAssetUrl(name);
+        if (!dim) return `<img src="${src}" alt="${name.replace(/"/g, "&quot;")}">`;
         const [w, h] = dim.split("x");
         const style = h ? `width:${w}px;height:${h}px;object-fit:contain;` : `width:${w}px;`;
         return `<img src="${src}" alt="" style="${style}">`;
@@ -5146,6 +5178,8 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
           const text = await resp.text();
           if (/does not exist|Not Found/i.test(text.slice(0, 200))) throw new Error("File not found");
+          state.playlist[i].baseUrl = fetchUrl;
+          setDeckBaseUrl(fetchUrl);
           state.playlist[i].slides = parseSlides(text);
           state.playlist[i].label = extractTitle(text) || pageNameFromUrl(url);
           state.playlist[i].status = "ready";
@@ -5161,6 +5195,7 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
       if (!entry || entry.status !== "ready") return;
       state.playlistIndex = i;
       state.slides = entry.slides;
+      setDeckBaseUrl(entry.baseUrl || entry.url);
       state.index = 0;
       state.col = 0;
       state.row = 0;
@@ -5643,6 +5678,7 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
       reader.onload = () => {
         const text = String(reader.result || "");
         state.sourceMarkdown = text;
+        setDeckBaseUrl(""); // a local file has no address to resolve assets against
         state.slides = parseSlides(text);
         buildGrid();
         state.index = 0;
@@ -5811,6 +5847,8 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
         const response = await fetch(fetchUrl, { cache: "no-store" });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const text = await response.text();
+        entry.baseUrl = fetchUrl;
+        setDeckBaseUrl(fetchUrl);
         entry.slides = parseSlides(text);
         entry.label = extractTitle(text) || pageNameFromUrl(entry.url);
         entry.status = "ready";
@@ -5875,6 +5913,7 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const text = await response.text();
         state.sourceMarkdown = text;
+        setDeckBaseUrl(fetchUrl);
         state.slides = parseSlides(text);
         state.index = anchor ? resolveSlideAnchor(anchor, state.slides) : 0;
         buildGrid(); // restores col/row from state.index
