@@ -59,6 +59,18 @@ The button turns green for a moment when the reload succeeds, red if it fails. O
 
 ---
 
+## Presenting from Obsidian
+
+Writing decks in a note-taking app means leaving it to present. The Obsidian plugin that ships with this project removes that step: a **Present this note** command opens the current note as a deck in a pane, with the vault's images resolved.
+
+No server, no browser, no network: the plugin writes the note's Markdown into its own copy of this app.
+
+-- duration: 30s
+It relies on a third way of handing a deck to the app, alongside the file picker and the URL box: Markdown embedded in the page itself, inside a script element with the id deck-source. Any host application can use it.
+Installation and usage are covered in the obsidian folder of the repository.
+
+---
+
 ## Obsidian Publish
 
 Paste any `https://publish.obsidian.md/` URL into **Load from URL** to load a slide deck hosted on your Obsidian Publish site.
