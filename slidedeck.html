@@ -3756,6 +3756,44 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
       state.index = col[state.row];
     }
 
+    /* ── Opening at a given slide ──
+       A slide reference from the page address is either a 1-based number, the
+       position in the file, or a piece of a heading. The heading match is
+       forgiving: case, accents and punctuation are ignored, so ?slide=intro
+       finds "## Introduction". */
+    function findSlideByRef(ref) {
+      const raw = String(ref || "").trim();
+      if (!raw || !state.slides.length) return -1;
+      if (/^\d+$/.test(raw)) {
+        const n = Number(raw);
+        return n >= 1 && n <= state.slides.length ? n - 1 : -1;
+      }
+      // Fold accents before slugifying, so ?slide=introduction-generale still
+      // matches "Introduction générale".
+      const fold = (value) => slugify(String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+      const needle = raw.toLowerCase();
+      const needleSlug = fold(raw);
+      const headings = state.slides.map(slideHeadingKey);
+      const exact = headings.findIndex(h => h && h === needle);
+      if (exact !== -1) return exact;
+      return headings.findIndex(h => {
+        if (!h) return false;
+        return h.includes(needle) || (needleSlug && fold(h).includes(needleSlug));
+      });
+    }
+
+    function goToSlideRef(ref) {
+      const target = findSlideByRef(ref);
+      if (target < 0) {
+        announceStatus(`No slide matching "${ref}".`);
+        return false;
+      }
+      state.index = target;
+      syncGridFromIndex();
+      renderSlide();
+      return true;
+    }
+
     function assignHeadingIds() {
       const contentRoot = slideEl.querySelector(".slide-content");
       if (!contentRoot) {
@@ -5112,9 +5150,18 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
       const sameOriginPrefix = isObsidian ? `https://publish.obsidian.md/${siteSlug}/` : null;
       const urls = new Set();
 
-      function toPublishUrl(rawPath) {
-        const clean = rawPath.replace(/\.md$/i, "").trim();
-        if (/^https?:\/\//.test(clean)) return clean;
+      function toDeckUrl(rawPath) {
+        const trimmed = String(rawPath || "").trim();
+        if (/^https?:\/\//.test(trimmed)) return trimmed;
+        if (!isObsidian) {
+          // Any other host, a local server included: there is no vault cache to
+          // resolve names against, so the link is resolved against the playlist
+          // page itself and the .md extension is kept.
+          const withExt = /\.md$/i.test(trimmed) ? trimmed : `${trimmed}.md`;
+          const encoded = withExt.split("/").map(s => encodeURIComponent(s.trim())).join("/");
+          try { return new URL(encoded, playlistUrl).href; } catch { return ""; }
+        }
+        const clean = trimmed.replace(/\.md$/i, "");
         // Name-only wiki link (no slashes): resolve vault-wide via cache
         if (!clean.includes("/") && nameMap?.has(clean)) {
           const vaultPath = nameMap.get(clean);
@@ -5128,7 +5175,16 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
       }
 
       function addUrl(url) {
+        if (!url) return;
         if (sameOriginPrefix && !url.startsWith(sameOriginPrefix)) return;
+        // Off an Obsidian Publish site there is no vault to bound the playlist,
+        // so only Markdown files count as decks: an index page carries other
+        // links too, this app's own address among them.
+        if (!isObsidian) {
+          let pathname = "";
+          try { pathname = new URL(url).pathname; } catch { return; }
+          if (!/\.md$/i.test(pathname)) return;
+        }
         urls.add(url);
       }
 
@@ -5139,12 +5195,12 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
         for (const m of line.matchAll(/\[\[([^\]]+)\]\]/g)) {
           const wikiTarget = m[1].split("|")[0].trim();
           if (wikiTarget.startsWith("#")) continue; // heading-only anchor, not a file
-          addUrl(toPublishUrl(wikiTarget.split("#")[0].trim())); // strip in-page anchor
+          addUrl(toDeckUrl(wikiTarget.split("#")[0].trim())); // strip in-page anchor
         }
         for (const m of line.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
           const href = m[1].trim();
           if (/^https?:\/\//.test(href) || href.startsWith("#")) continue;
-          addUrl(toPublishUrl(decodeURIComponent(href.replace(/\+/g, " "))));
+          addUrl(toDeckUrl(decodeURIComponent(href.replace(/\+/g, " "))));
         }
       }
 
@@ -6489,28 +6545,71 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
     loadSettings();
     renderSlide();
 
-    // ── Deck given in the page URL (?url=…) ──────────────────────────────
-    /* Opens the app with its deck already loaded, e.g.
+    // ── Deck given in the page address ───────────────────────────────────
+    /* Opens the app with its deck already loaded, so a link can do the work
+       of the start screen:
          slidedeck.html?url=PRESENTATIONS/mon-deck.md
-       A relative path is resolved against this page, so the app and the
-       .md files can be served together by one local server. The URL is
-       remembered like any other, so R reloads it after an edit. */
-    (function loadDeckFromQuery() {
-      let requested = "";
+         slidedeck.html?url=mon-deck.md&slide=12
+         slidedeck.html?url=mon-deck.md&slide=conclusion
+         slidedeck.html?playlist=PRESENTATIONS/plan-du-jour.md
+         slidedeck.html?playlist=deck-a.md,deck-b.md
+       Relative paths are resolved against this page, so the app and the .md
+       files can be served together by a single local server. A deck opened
+       this way is remembered like any other, so R re-fetches it after an
+       edit, keeping the current slide. */
+    (function loadFromQueryString() {
+      let params;
       try {
-        requested = (new URLSearchParams(location.search).get("url") || "").trim();
+        params = new URLSearchParams(location.search);
       } catch (err) {
         console.warn("Query string read error:", err);
-      }
-      if (!requested) return;
-      let resolved;
-      try {
-        resolved = new URL(requested, location.href).href;
-      } catch {
-        console.warn("Invalid ?url= value:", requested);
         return;
       }
-      loadFromUrl(resolved);
+
+      function resolveAddress(value) {
+        try {
+          return new URL(String(value).trim(), location.href).href;
+        } catch {
+          console.warn("Invalid address in the query string:", value);
+          return "";
+        }
+      }
+
+      const playlistParam = (params.get("playlist") || "").trim();
+      if (playlistParam) {
+        // A comma-separated list is the playlist itself; a single address is a
+        // page that links to the decks, as in the Playlist panel's From URL tab.
+        const parts = playlistParam.split(",").map(s => s.trim()).filter(Boolean);
+        if (parts.length > 1) {
+          const urls = parts.map(resolveAddress).filter(Boolean);
+          if (urls.length) loadPlaylist(urls);
+          return;
+        }
+        const indexUrl = resolveAddress(parts[0]);
+        if (!indexUrl) return;
+        fetchPlaylistFromUrl(indexUrl)
+          .then((urls) => {
+            if (urls.length) return loadPlaylist(urls);
+            announceStatus("No slide deck links found on that playlist page.");
+          })
+          .catch((err) => {
+            const msg = String(err?.message || err);
+            announceStatus(`Could not fetch the playlist: ${msg}`);
+            console.warn("Playlist query-string error:", err);
+          });
+        return;
+      }
+
+      const deckParam = (params.get("url") || "").trim();
+      if (!deckParam) return;
+      const deckUrl = resolveAddress(deckParam);
+      if (!deckUrl) return;
+      const slideParam = (params.get("slide") || "").trim();
+      loadFromUrl(deckUrl).then(() => {
+        // loadFromUrl reports its own failures and resolves either way, so
+        // check a deck actually arrived before hunting for a slide in it.
+        if (slideParam && state.slides.length) goToSlideRef(slideParam);
+      });
     })();
   </script>
 </body>
