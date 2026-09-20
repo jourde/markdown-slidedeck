@@ -39,7 +39,7 @@ class DeckView extends ItemView {
 
   getViewType() { return VIEW_TYPE; }
   getIcon() { return "presentation"; }
-  getDisplayText() { return this.file ? `Deck : ${this.file.basename}` : "Deck"; }
+  getDisplayText() { return this.file ? `Deck: ${this.file.basename}` : "Deck"; }
 
   async present(file) {
     this.file = file;
@@ -89,22 +89,22 @@ module.exports = class SlideDeckPlugin extends Plugin {
 
     this.addCommand({
       id: "present-current-note",
-      name: "Présenter cette note",
+      name: "Present this note",
       callback: () => this.present(this.app.workspace.getActiveFile()),
     });
 
     this.addCommand({
       id: "reload-deck",
-      name: "Recharger le deck affiché",
+      name: "Reload the displayed deck",
       callback: () => this.reload(),
     });
 
-    this.addRibbonIcon("presentation", "Présenter cette note", () => this.present(this.app.workspace.getActiveFile()));
+    this.addRibbonIcon("presentation", "Present this note", () => this.present(this.app.workspace.getActiveFile()));
 
     this.registerEvent(this.app.workspace.on("file-menu", (menu, file) => {
       if (!file || file.extension !== "md") return;
       menu.addItem((item) => item
-        .setTitle("Présenter ce deck")
+        .setTitle("Present this deck")
         .setIcon("presentation")
         .onClick(() => this.present(file)));
     }));
@@ -112,7 +112,7 @@ module.exports = class SlideDeckPlugin extends Plugin {
 
   async present(file) {
     if (!file || file.extension !== "md") {
-      new Notice("Ouvre d'abord une note Markdown.");
+      new Notice("Open a Markdown note first.");
       return;
     }
     try {
@@ -125,7 +125,7 @@ module.exports = class SlideDeckPlugin extends Plugin {
       await leaf.view.present(file);
     } catch (err) {
       console.error("Markdown Slide Deck:", err);
-      new Notice(`Le deck n'a pas pu être affiché : ${err.message}`);
+      new Notice(`The deck could not be displayed: ${err.message}`);
     }
   }
 
@@ -133,7 +133,7 @@ module.exports = class SlideDeckPlugin extends Plugin {
     const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE)[0];
     const file = leaf?.view?.file;
     if (!file) {
-      new Notice("Aucun deck affiché.");
+      new Notice("No deck is being displayed.");
       return;
     }
     await this.present(file);

@@ -1,9 +1,9 @@
 {
   "id": "slidedeck-present",
   "name": "Markdown Slide Deck",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minAppVersion": "1.4.0",
-  "description": "Présente la note courante avec Markdown Slide Deck, dans un volet d'Obsidian, sans serveur ni réseau.",
+  "description": "Presents the current note with Markdown Slide Deck, in an Obsidian pane, with no server and no network.",
   "author": "François Jourde",
   "authorUrl": "https://github.com/jourde/markdown-slidedeck",
   "isDesktopOnly": true
