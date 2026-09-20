@@ -1,7 +1,7 @@
 {
   "id": "slidedeck-present",
   "name": "Markdown Slide Deck",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "minAppVersion": "1.4.0",
   "description": "Presents the current note with Markdown Slide Deck, in an Obsidian pane, with no server and no network.",
   "author": "François Jourde",

@@ -3,20 +3,21 @@
 /*
  * Markdown Slide Deck for Obsidian
  *
- * Presents the current note with the Markdown Slide Deck app, inside an
- * Obsidian pane. No server, no browser, no network: the app ships with the
- * plugin, the note's Markdown is written into a copy of it, and the copy is
- * loaded in an iframe.
+ * Presents the current note as a deck, inside an Obsidian pane. No server, no
+ * browser, no network: the app ships with the plugin, the note's Markdown is
+ * written into a copy of it, and the copy is loaded in an iframe.
  *
- * Vault images are rewritten to Obsidian resource addresses before the deck
- * is handed over, so ![[schema.png]] and ![](attachments/schema.png) display
- * exactly as they do in the note.
+ * Refreshing does not go through that copy again: the new Markdown is posted
+ * to the page already on screen, which keeps the current slide and avoids
+ * rewriting several megabytes on every edit. If the message goes unanswered,
+ * the full rewrite is used as a fallback.
  */
 
 const { Plugin, ItemView, Notice } = require("obsidian");
 
 const VIEW_TYPE = "slidedeck-present";
 const APP_FILE = "slidedeck.html";
+const ACK_TIMEOUT = 600;
 const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "avif"]);
 
 /* Base64 of UTF-8 text. Buffer exists on the desktop; the fallback keeps the
@@ -29,28 +30,41 @@ function toBase64(text) {
   return btoa(binary);
 }
 
+function newToken() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 class DeckView extends ItemView {
   constructor(leaf, plugin) {
     super(leaf);
     this.plugin = plugin;
     this.file = null;
     this.previewPath = null;
+    this.frame = null;
+    this.token = null;
   }
 
   getViewType() { return VIEW_TYPE; }
   getIcon() { return "presentation"; }
   getDisplayText() { return this.file ? `Deck: ${this.file.basename}` : "Deck"; }
 
+  async onOpen() {
+    this.addAction("refresh-cw", "Reload deck", () => this.refresh());
+  }
+
+  /* Full display: write the app copy with the deck inside, load it. */
   async present(file) {
     this.file = file;
     const adapter = this.app.vault.adapter;
     const dir = this.plugin.manifest.dir;
 
     const app = await adapter.read(`${dir}/${APP_FILE}`);
-    const markdown = this.plugin.rewriteAssets(await this.app.vault.read(file), file.path);
+    const markdown = await this.readDeck(file);
+    this.token = newToken();
     const block =
-      `<script type="text/markdown" id="deck-source" data-encoding="base64">` +
-      `${toBase64(markdown)}</script>\n`;
+      `<script type="text/markdown" id="deck-source" data-encoding="base64" ` +
+      `data-token="${this.token}">${toBase64(markdown)}</script>\n`;
 
     // The inlined libraries contain that closing tag inside their own source,
     // so the document's real one is the last, never the first.
@@ -73,10 +87,62 @@ class DeckView extends ItemView {
     frame.addEventListener("load", () => {
       try { frame.contentWindow.focus(); } catch (err) { /* keyboard needs a click, no more */ }
     });
+    this.frame = frame;
     this.leaf.updateHeader?.();
   }
 
+  /* Refresh: hand the new Markdown to the page already on screen. */
+  async refresh() {
+    if (!this.file) {
+      new Notice("No deck is being displayed.");
+      return;
+    }
+    try {
+      if (this.frame?.contentWindow && this.token) {
+        const markdown = await this.readDeck(this.file);
+        if (await this.postDeck(markdown)) return;
+      }
+      await this.present(this.file);
+    } catch (err) {
+      console.error("Markdown Slide Deck:", err);
+      new Notice(`The deck could not be refreshed: ${err.message}`);
+    }
+  }
+
+  async readDeck(file) {
+    return this.plugin.rewriteAssets(await this.app.vault.read(file), file.path);
+  }
+
+  /* Resolves true once the page acknowledges, false if it stays silent. */
+  postDeck(markdown) {
+    return new Promise((resolve) => {
+      const frame = this.frame;
+      if (!frame?.contentWindow) return resolve(false);
+      let settled = false;
+      const finish = (ok) => {
+        if (settled) return;
+        settled = true;
+        window.removeEventListener("message", onMessage);
+        window.clearTimeout(timer);
+        resolve(ok);
+      };
+      const onMessage = (event) => {
+        if (event.data?.type === "slidedeck:ack" && event.data.token === this.token) finish(true);
+      };
+      window.addEventListener("message", onMessage);
+      const timer = window.setTimeout(() => finish(false), ACK_TIMEOUT);
+      try {
+        frame.contentWindow.postMessage(
+          { type: "slidedeck:deck", token: this.token, markdown, keepPosition: true }, "*");
+      } catch (err) {
+        console.warn("Markdown Slide Deck: message refused, falling back.", err);
+        finish(false);
+      }
+    });
+  }
+
   async onClose() {
+    this.frame = null;
     if (!this.previewPath) return;
     try { await this.app.vault.adapter.remove(this.previewPath); } catch (err) { /* already gone */ }
     this.previewPath = null;
@@ -130,13 +196,12 @@ module.exports = class SlideDeckPlugin extends Plugin {
   }
 
   async reload() {
-    const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE)[0];
-    const file = leaf?.view?.file;
-    if (!file) {
+    const view = this.app.workspace.getLeavesOfType(VIEW_TYPE)[0]?.view;
+    if (!view) {
       new Notice("No deck is being displayed.");
       return;
     }
-    await this.present(file);
+    await view.refresh();
   }
 
   /* Turn vault image links into addresses the iframe can load. Anything that

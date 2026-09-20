@@ -57,7 +57,8 @@ app.vault.adapter.basePath
 - Command palette: **Present this note**
 - The ribbon icon in the left sidebar
 - Right-click a note: **Present this deck**
-- **Reload the displayed deck** after editing, which keeps you in Obsidian
+- The refresh button in the pane's header, or **Reload the displayed deck** in
+  the palette, after editing the note
 - Right-click the pane's tab to move it to its own window, for a projector
 
 ## How it works
@@ -66,6 +67,12 @@ The plugin reads the note, rewrites vault image links to addresses the pane can
 load, encodes the Markdown in base64 and writes it into a copy of
 `slidedeck.html` as a `deck-source` script element. That copy is loaded in an
 iframe. Temporary `preview-*.html` files are removed when the pane closes.
+
+Refreshing takes a shorter route: the new Markdown is posted to the page
+already on screen, which keeps the current slide and avoids rewriting several
+megabytes on every edit. The page acknowledges the message; if nothing comes
+back within 600 ms, the plugin falls back to the full rewrite, so a refresh
+never silently does nothing.
 
 Both `![[embed.png]]` and `![](path.png)` are resolved, sizes included:
 `![[schema.png|400]]` becomes `![|400](…)`, which the app already understands.
