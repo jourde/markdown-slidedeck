@@ -5638,24 +5638,29 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
       updateSlideAlignment();
     }
 
+    /* Put a deck on screen, whatever it came from: an imported file, or
+       Markdown embedded in the page by a host application. */
+    function installDeck(text) {
+      state.sourceMarkdown = text;
+      state.slides = parseSlides(text);
+      buildGrid();
+      state.index = 0;
+      state.col = 0;
+      state.row = 0;
+      if (state.search.query.trim()) {
+        rebuildSearchResults();
+      }
+      if (editorTextareaEl && appEl?.classList.contains("split-view")) {
+        editorTextareaEl.value = text;
+        updateEditorStatus();
+      }
+      renderSlide();
+    }
+
     function loadFile(file) {
       const reader = new FileReader();
       reader.onload = () => {
-        const text = String(reader.result || "");
-        state.sourceMarkdown = text;
-        state.slides = parseSlides(text);
-        buildGrid();
-        state.index = 0;
-        state.col = 0;
-        state.row = 0;
-        if (state.search.query.trim()) {
-          rebuildSearchResults();
-        }
-        if (editorTextareaEl && appEl?.classList.contains("split-view")) {
-          editorTextareaEl.value = text;
-          updateEditorStatus();
-        }
-        renderSlide();
+        installDeck(String(reader.result || ""));
       };
       reader.readAsText(file);
     }
@@ -6473,6 +6478,42 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
       }
       loadFromUrl(resolved);
     })();
+
+    // ── Deck embedded in the page ────────────────────────────────────────
+    /* A host application can write the deck straight into this file instead
+       of serving it at an address:
+
+         <script type="text/markdown" id="deck-source">…Markdown…<\/script>
+
+       With data-encoding="base64" the content is decoded first, which spares
+       the host any escaping worry about Markdown that contains a closing
+       script tag. This is how the Obsidian plugin presents the current note,
+       with no server and no network. */
+    function loadEmbeddedDeck() {
+      const holder = document.getElementById("deck-source");
+      if (!holder) return;
+      let text = holder.textContent || "";
+      if (holder.dataset.encoding === "base64") {
+        try {
+          const binary = atob(text.replace(/\s+/g, ""));
+          const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+          text = new TextDecoder("utf-8").decode(bytes);
+        } catch (err) {
+          console.warn("Embedded deck could not be decoded:", err);
+          return;
+        }
+      }
+      if (!text.trim()) return;
+      installDeck(text);
+    }
+
+    // The host may write the deck after this script, so wait for the document
+    // rather than assume the element is already there.
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", loadEmbeddedDeck, { once: true });
+    } else {
+      loadEmbeddedDeck();
+    }
   </script>
 </body>
 </html>
