@@ -5639,14 +5639,15 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
     }
 
     /* Put a deck on screen, whatever it came from: an imported file, or
-       Markdown embedded in the page by a host application. */
-    function installDeck(text) {
+       Markdown embedded in the page by a host application. With keepPosition
+       the current slide is looked up again in the new text, so refreshing an
+       edited deck does not send the speaker back to the first slide. */
+    function installDeck(text, { keepPosition = false } = {}) {
+      const anchor = keepPosition ? captureSlideAnchor() : null;
       state.sourceMarkdown = text;
       state.slides = parseSlides(text);
-      buildGrid();
-      state.index = 0;
-      state.col = 0;
-      state.row = 0;
+      state.index = anchor ? resolveSlideAnchor(anchor, state.slides) : 0;
+      buildGrid(); // restores col and row from state.index
       if (state.search.query.trim()) {
         rebuildSearchResults();
       }
@@ -6514,6 +6515,30 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
     } else {
       loadEmbeddedDeck();
     }
+
+    /* A host that embedded a deck can also replace it without reloading the
+       page, which is far cheaper than rewriting this file and keeps the
+       speaker on the current slide:
+
+         frame.contentWindow.postMessage(
+           { type: "slidedeck:deck", token, markdown }, "*");
+
+       Only messages carrying the token written next to the deck are accepted,
+       and an acknowledgement is sent back so the host knows the update
+       landed. A page with no embedded deck ignores messages entirely. */
+    window.addEventListener("message", (event) => {
+      const token = document.getElementById("deck-source")?.dataset.token;
+      if (!token) return;
+      const message = event.data;
+      if (!message || message.type !== "slidedeck:deck") return;
+      if (message.token !== token || typeof message.markdown !== "string") return;
+      installDeck(message.markdown, { keepPosition: message.keepPosition !== false });
+      try {
+        event.source?.postMessage({ type: "slidedeck:ack", token }, "*");
+      } catch (err) {
+        console.warn("Could not acknowledge the deck update:", err);
+      }
+    });
   </script>
 </body>
 </html>
