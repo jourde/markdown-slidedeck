@@ -59,6 +59,38 @@ The button turns green for a moment when the reload succeeds, red if it fails. O
 
 ---
 
+## Deck in the Page Address
+
+Add `?url=` to the app's own address and the deck loads by itself, with no start screen and no file to drop:
+
+```
+slidedeck.html?url=https://example.com/deck.md
+slidedeck.html?url=PRESENTATIONS/my-deck.md
+```
+
+A relative path is resolved against the app, so the second form works whenever the app and the `.md` files are served from the same place, a local server included.
+
+Add `&slide=` to open the deck at a given slide, by position in the file or by a piece of its heading:
+
+```
+slidedeck.html?url=my-deck.md&slide=12
+slidedeck.html?url=my-deck.md&slide=conclusion
+```
+
+`?playlist=` does the same for a whole session. Give it the address of a page that links to your decks, or a comma-separated list of decks:
+
+```
+slidedeck.html?playlist=plan-of-the-day.md
+slidedeck.html?playlist=deck-a.md,deck-b.md
+```
+
+-- duration: 45s
+A deck opened this way is remembered like any other: `R` re-fetches it and keeps your place, and **Reload last URL** offers it again next time. If both parameters are present, the playlist wins, and `slide` applies to `url` only.
+A heading match ignores case, accents and punctuation, so `slide=introduction-generale` finds "Introduction générale". Slide numbers count every slide in the file, omitted ones included.
+This is the shortest route out of a note-taking app: keep a link like this at the top of each deck file and one click takes you from writing to presenting.
+
+---
+
 ## Obsidian Publish
 
 Paste any `https://publish.obsidian.md/` URL into **Load from URL** to load a slide deck hosted on your Obsidian Publish site.
@@ -74,7 +106,7 @@ No raw CDN URL needed — the app fetches the site UID from the Obsidian Publish
 
 Click **Playlist** on the start screen to pre-load several slide decks at once and switch between them instantly during a presentation.
 
-**From URL** — paste the URL of an Obsidian Publish page whose content links to your slide decks. The app reads `[[wiki links]]`, `[markdown links](path)`, and full `https://` URLs from that page and pre-fetches every deck in parallel.
+**From URL** — paste the URL of a page whose content links to your slide decks: an Obsidian Publish page, or any other page served over http(s), including one from a local server. The app reads `[[wiki links]]`, `[markdown links](path)`, and full `http(s)://` URLs from that page and pre-fetches every deck in parallel.
 
 Prefix any link with `- [ ]` to exclude it from the playlist without deleting it:
 
@@ -91,6 +123,7 @@ Click **Pre-load All** to begin loading.
 -- duration: 45s
 The From URL mode resolves Obsidian wiki links vault-wide using the Obsidian Publish file cache — links always point to the correct file regardless of where it lives in your vault.
 Only URLs from the same Obsidian Publish site are included as decks; external links on the page are ignored.
+Off an Obsidian Publish site there is no vault cache, so links are resolved against the playlist page itself, a `[[wiki link]]` is taken as a file of that name beside it, and only addresses whose path ends in `.md` count as decks. Everything else on the page, this app's own address included, is ignored.
 
 ---
 
@@ -230,6 +263,7 @@ Add YAML frontmatter at the very top of your Markdown file to set metadata:
 title: My Presentation
 author: Jane Smith
 date: 2026-01-01
+assets: attachments/
 ---
 
 ## First Slide
@@ -237,8 +271,11 @@ date: 2026-01-01
 
 Frontmatter is parsed and stored but does not appear as slide content.
 
+`assets:` is the exception: it sets the folder that relative image paths are resolved against, for decks whose images live somewhere other than beside the file.
+
 -- duration: 20s
 The frontmatter block must start on the very first line and be closed by a second --- before any slide content.
+An `assets:` path is itself resolved against the deck, so both `attachments/` and `/vault-wide/attachments/` work.
 
 ---
 
@@ -438,13 +475,14 @@ Full **CommonMark** Markdown is supported:
 - Ordered and unordered lists
 - Blockquotes, tables, horizontal rules
 - Fenced code blocks with syntax hints
-- Images — automatically constrained to fit the slide
+- Images — `![](path.png)` or Obsidian's `![[path.png]]`, automatically constrained to fit the slide
 - Footnotes[^1]
 
 [^1]: Footnote definitions are placed at the bottom of a slide's content.
 
 -- duration: 45s
 Images are scaled to a maximum of 100% width and 65% viewport height, preserving aspect ratio. No manual sizing needed.
+A relative image path is resolved against the deck's own address, not the app's, so a deck loaded from a URL finds the images sitting beside it. Point `assets:` in the frontmatter elsewhere if your images live in one central folder. A deck imported as a local file has no address to resolve against, so its images need absolute URLs.
 
 ---
 
@@ -663,6 +701,7 @@ All keyboard shortcuts work when focus is on the slide — not when a text input
 - The `# H1` delimiter mode works well for existing Markdown documents and creates sections automatically
 - Imported files stay **local** — nothing is uploaded; URL-loaded files are fetched directly from their host
 - Edited the online file mid-session? Press `R` to pull the new version without leaving your slide
+- Keep a `?url=` link at the top of each deck file, wherever you write: one click opens the app with that deck already loaded
 - The **split editor** lets you author and preview at the same time — click **Download .md** to save your work
 - Use `O` during a presentation to jump to any slide instantly
 - Use **Playlist** before a multi-deck session — all decks pre-load in the background; switching between them is instant with `D` or number keys
