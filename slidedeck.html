@@ -810,6 +810,15 @@
       font-weight: 500;
       color: #8595ac;
     }
+    .duration-bar-label-remaining {
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: #8595ac;
+      flex-shrink: 0;
+      white-space: nowrap;
+      min-width: 5.5em;
+      text-align: right;
+    }
 
     .slide-duration-bar-fill {
       height: 100%;
@@ -5368,7 +5377,6 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
         titleSpan.textContent = title;
         const minsSpan = document.createElement("span");
         minsSpan.className = "duration-bar-label-mins";
-        minsSpan.textContent = `${Math.round(durationSecs / 60)} min.`;
         lbl.appendChild(titleSpan);
         lbl.appendChild(minsSpan);
         const track = document.createElement("div");
@@ -5378,8 +5386,21 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
         fill.style.animationDuration = `${durationSecs}s`;
         fill.style.animationDelay = `-${Math.min(elapsedSecs, durationSecs)}s`;
         track.appendChild(fill);
+        const remainingSpan = document.createElement("span");
+        remainingSpan.className = "duration-bar-label-remaining";
         row.appendChild(lbl);
         row.appendChild(track);
+        row.appendChild(remainingSpan);
+        // Kept so the labels can be refreshed every second without rebuilding
+        // the row, which would restart the fill animation.
+        row.durationInfo = {
+          durationSecs,
+          elapsedAtRender: elapsedSecs,
+          renderedAt: Date.now(),
+          minsSpan,
+          remainingSpan,
+        };
+        setDurationBarLabels(row.durationInfo);
         return row;
       }
 
@@ -5402,6 +5423,27 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
         durationBarEl.appendChild(makeBarRow("Total", totalDuration, globalElapsedSecs));
       }
     }
+
+    function setDurationBarLabels(info) {
+      const elapsedSecs = Math.min(
+        info.durationSecs,
+        info.elapsedAtRender + (Date.now() - info.renderedAt) / 1000
+      );
+      const remainingSecs = Math.max(0, info.durationSecs - elapsedSecs);
+      info.minsSpan.textContent = `${Math.round(elapsedSecs / 60)} min.`;
+      info.remainingSpan.textContent = `reste ${Math.ceil(remainingSecs / 60)} min.`;
+    }
+
+    // Updates only the label text; the rows and their animations stay in place.
+    function updateDurationBarLabels() {
+      const durationBarEl = document.getElementById("durationBar");
+      if (!durationBarEl || durationBarEl.hidden) return;
+      durationBarEl.querySelectorAll(".duration-bar-row").forEach((row) => {
+        if (row.durationInfo) setDurationBarLabels(row.durationInfo);
+      });
+    }
+
+    setInterval(updateDurationBarLabels, 1000);
 
     function renderTrainMapLinear() {
       const hiddenFlat = hiddenFlatIndices();
